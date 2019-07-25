@@ -1,34 +1,43 @@
 """
 pyworkdir.py
 Python working directories.
-
-Handles the primary functions
 """
 
+import os
+import traceback
 
-def canvas(with_attribution=True):
+
+class WorkDir(object):
     """
-    Placeholder function to show example docstring (NumPy format)
-
-    Replace this function and doc string for your own project
+    Working directory class.
 
     Parameters
     ----------
-    with_attribution : bool, Optional, default: True
-        Set whether or not to display who the quote is from
+    directory : str, Optional, default: "."
+        The directory name
 
-    Returns
-    -------
-    quote : str
-        Compiled string including quote and optional attribution
+    Examples
+    --------
+    Basic usage:
+
+    >>> with WorkDir():
+    >>>     pass  # do something in the working directory
     """
 
-    quote = "The code is but a canvas to our imagination."
-    if with_attribution:
-        quote += "\n\t- Adapted from Henry David Thoreau"
-    return quote
+    def __init__(self, directory="."):
+        self.directory = directory
+
+    def __enter__(self):
+        self.old_path = os.getcwd()
+        os.chdir(self.directory)
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        os.chdir(self.old_path)
+        if exc_type is not None:
+            traceback.print_exception(exc_type, exc_value, tb)
+            return False
+        return True
 
 
-if __name__ == "__main__":
-    # Do something if this file is invoked on its own
-    print(canvas())
+
