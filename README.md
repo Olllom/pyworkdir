@@ -7,6 +7,18 @@ pyworkdir
 
 Python working directories.
 
+### Quickstart
+
+#### Basic Usage
+
+    from pyworkdir import WorkDir
+    
+    with WorkDir("some_directory"):
+        # everything in this context is run 
+        # in the specified directory
+        pass 
+
+
 ### Copyright
 
 Copyright (c) 2019, Andreas Krämer
