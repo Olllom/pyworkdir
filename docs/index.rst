@@ -10,7 +10,10 @@ Welcome to pyworkdir's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+.. automodule:: pyworkdir.workdir
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Indices and tables
 ==================
