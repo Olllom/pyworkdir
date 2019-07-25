@@ -14,3 +14,10 @@ def test_change_directory(tmpdir):
     with WorkDir(str(tmpdir)):
         assert os.getcwd() == str(tmpdir)
     assert os.getcwd() == this_path
+
+
+def test_error_in_context(tmpdir):
+    """Test that an exception in the context is forwarded."""
+    with WorkDir(str(tmpdir)):
+        with pytest.raises(AssertionError):
+            assert False

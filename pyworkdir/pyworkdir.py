@@ -35,7 +35,7 @@ class WorkDir(object):
     def __exit__(self, exc_type, exc_value, tb):
         os.chdir(self.old_path)
         if exc_type is not None:
-            traceback.print_exception(exc_type, exc_value, tb)
+            # do logging here traceback.print_exception(exc_type, exc_value, tb)
             return False
         return True
 
