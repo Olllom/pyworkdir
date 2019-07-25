@@ -11,13 +11,14 @@ Python working directories.
 
 #### Basic Usage
 
+```python
     from pyworkdir import WorkDir
     
     with WorkDir("some_directory"):
         # everything in this context is run 
         # in the specified directory
         pass 
-
+```
 
 ### Copyright
 
