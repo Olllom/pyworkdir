@@ -1,9 +1,9 @@
 pyworkdir
 ==============================
 [//]: # (Badges)
-[![Travis Build Status](https://travis-ci.org/REPLACE_WITH_OWNER_ACCOUNT/pyworkdir.png)](https://travis-ci.org/REPLACE_WITH_OWNER_ACCOUNT/pyworkdir)
-[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/REPLACE_WITH_APPVEYOR_LINK/branch/master?svg=true)](https://ci.appveyor.com/project/REPLACE_WITH_OWNER_ACCOUNT/pyworkdir/branch/master)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/pyworkdir/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/pyworkdir/branch/master)
+[![Travis Build Status](https://travis-ci.org/olllom/pyworkdir.png)](https://travis-ci.org/olllom/pyworkdir)
+[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/olllom/branch/master?svg=true)](https://ci.appveyor.com/project/olllom/pyworkdir/branch/master)
+[![codecov](https://codecov.io/gh/olllom/pyworkdir/branch/master/graph/badge.svg)](https://codecov.io/gh/olllom/pyworkdir/branch/master)
 
 Python working directories.
 
