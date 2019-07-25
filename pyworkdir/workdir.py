@@ -20,8 +20,10 @@ class WorkDir(object):
     --------
     Basic usage:
 
-    >>> with WorkDir():
-    >>>     pass  # do something in the working directory
+    >>> with WorkDir("some_directory"):
+    >>>     # everything in this context will be
+    >>>     # run in the specified directory
+    >>>     pass
     """
 
     def __init__(self, directory="."):
