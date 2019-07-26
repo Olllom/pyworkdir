@@ -10,6 +10,21 @@ Welcome to pyworkdir's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+
+Basic usage::
+
+    from pyworkdir import WorkDir
+
+    with WorkDir("some_directory"):
+        # everything in this context is run
+        # in the specified directory
+        pass
+
+
+
+API
+===
+
 .. automodule:: pyworkdir.workdir
     :members:
     :undoc-members:

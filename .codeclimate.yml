@@ -1,0 +1,5 @@
+
+exclude_patterns:
+- "versioneer.py"
+- "pyworkdir/_version.py"
+- "tests/"
