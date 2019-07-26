@@ -91,10 +91,7 @@ class WorkDir(object):
         """
         for element in os.listdir(str(self.path)):
             if os.path.isfile(element):
-                if abs:
-                    yield os.path.join(self.path, element)
-                else:
-                    yield element
+                yield os.path.join(self.path, element) if abs else element
 
 
 
