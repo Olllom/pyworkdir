@@ -5,6 +5,7 @@ Python working directories.
 
 import os
 import pathlib
+from pyworkdir.util import WorkDirException
 
 
 class WorkDir(object):
@@ -15,14 +16,15 @@ class WorkDir(object):
     ----------
     directory : str, Optional, default: "."
         The directory name
+    mkdir: bool, Optional, default: True
+        Whether to create the directory if it does not exist
 
     Attributes
     ----------
-    path: str
+    path: pathlib.Path
         Absolute path of this working directory
-
-    old_path: str
-        The path surrounding
+    scope_path: pathlib.Path
+        The path of the surrounding scope (when used as a context manager)
 
     Notes
     -----
@@ -45,16 +47,22 @@ class WorkDir(object):
     >>>     pass
     """
 
-    def __init__(self, directory="."):
+    def __init__(self, directory=".", mkdir=True):
         self.path = pathlib.Path(os.path.realpath(directory))
+        self.scope_path = self.path
+        if mkdir:
+            if self.path.is_file():
+                raise WorkDirException(f"Workdir could not be created. {self.path} is a file.")
+            elif not self.path.is_dir():
+                os.mkdir(self.path)
 
     def __enter__(self):
-        self.old_path = os.getcwd()
+        self.scope_path = pathlib.Path.cwd()
         os.chdir(str(self.path))
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        os.chdir(self.old_path)
+        os.chdir(self.scope_path)
         if exc_type is not None:
             # do logging here traceback.print_exception(exc_type, exc_value, tb)
             return False
@@ -91,7 +99,8 @@ class WorkDir(object):
         """
         for element in os.listdir(str(self.path)):
             if os.path.isfile(element):
-                yield os.path.join(self.path, element) if abs else element
+                yield self.path/element if abs else pathlib.Path(element)
+
 
 
 
