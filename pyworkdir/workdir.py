@@ -4,7 +4,7 @@ Python working directories.
 """
 
 import os
-import traceback
+import pathlib
 
 
 class WorkDir(object):
@@ -46,11 +46,11 @@ class WorkDir(object):
     """
 
     def __init__(self, directory="."):
-        self.path = os.path.realpath(directory)
+        self.path = pathlib.Path(os.path.realpath(directory))
 
     def __enter__(self):
         self.old_path = os.getcwd()
-        os.chdir(self.path)
+        os.chdir(str(self.path))
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
@@ -61,13 +61,40 @@ class WorkDir(object):
         return True
 
     def __str__(self):
-        return self.path
+        return str(self.path)
 
     def __truediv__(self, other):
-        return os.path.join(self.path, other)
+        return self.path / other
 
     def __len__(self):
-        return len(os.listdir(self.path))
+        return len(os.listdir(str(self.path)))
+
+    def files(self, abs=False):
+        """
+        Iterator over files in this work dir.
+
+        Parameters
+        ----------
+        abs : bool, Optional, default=False
+            Yield absolute filenames
+
+        Yields
+        ------
+        file : str
+            Filenames in this directory
+
+        Examples
+        --------
+        >>> with WorkDir("some_directory") as wd:
+        >>>     for file in wd.files():
+        >>>         print(file)
+        """
+        for element in os.listdir(str(self.path)):
+            if os.path.isfile(element):
+                if abs:
+                    yield os.path.join(self.path, element)
+                else:
+                    yield element
 
 
 

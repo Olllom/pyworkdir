@@ -10,10 +10,10 @@ import os
 
 def test_change_directory(tmpdir):
     """Test that the working directory changes the directory correctly"""
-    this_path = os.getcwd()
+    surrounding_path = os.getcwd()
     with WorkDir(str(tmpdir)):
         assert os.getcwd() == str(tmpdir)
-    assert os.getcwd() == this_path
+    assert os.getcwd() == surrounding_path
 
 
 def test_error_in_context(tmpdir):
@@ -26,13 +26,22 @@ def test_error_in_context(tmpdir):
 def test_truediv(tmpdir):
     """Test the division operator."""
     with WorkDir(str(tmpdir)) as wd:
-        assert wd/"file.txt" == os.path.join(str(tmpdir), "file.txt")
+        assert str(wd/"file.txt") == os.path.join(str(tmpdir), "file.txt")
 
 
 def test_len(tmpdir):
     """Test length operator"""
     with WorkDir(str(tmpdir)) as wd:
         assert len(wd) == 0
-        os.mkdir(tmpdir/"a")
+        os.mkdir(wd/"a")
         assert len(wd) == 1
+
+
+def test_files(tmpdir):
+    with WorkDir(str(tmpdir)) as wd:
+        (wd.path/"a").touch()
+        (wd.path/"b").touch()
+        (wd.path/"c").touch()
+        os.mkdir(wd/"dir")
+        assert len([f for f in wd.files()]) == 3
 
