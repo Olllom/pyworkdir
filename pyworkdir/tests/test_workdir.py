@@ -21,3 +21,18 @@ def test_error_in_context(tmpdir):
     with pytest.raises(AssertionError):
         with WorkDir(str(tmpdir)):
             assert False
+
+
+def test_truediv(tmpdir):
+    """Test the division operator."""
+    with WorkDir(str(tmpdir)) as wd:
+        assert wd/"file.txt" == os.path.join(str(tmpdir), "file.txt")
+
+
+def test_len(tmpdir):
+    """Test length operator"""
+    with WorkDir(str(tmpdir)) as wd:
+        assert len(wd) == 0
+        os.mkdir(tmpdir/"a")
+        assert len(wd) == 1
+

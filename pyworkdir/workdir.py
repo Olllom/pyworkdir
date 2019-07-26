@@ -16,22 +16,41 @@ class WorkDir(object):
     directory : str, Optional, default: "."
         The directory name
 
+    Attributes
+    ----------
+    path: str
+        Absolute path of this working directory
+
+    old_path: str
+        The path surrounding
+
+    Notes
+    -----
+    Get the absolute path of a file in this working directory
+
+    >>> with WorkDir("some_path") as wd:
+    >>>     absolute_path = wd / "some_file.txt"
+
+    Get the number of files and subdirectories:
+
+    >>>     len(wd)
+
     Examples
     --------
     Basic usage:
 
-    >>> with WorkDir("some_directory"):
-    >>>     # everything in this context will be
+    >>> with WorkDir("some_path"):
+    >>>     # everything in this context will
     >>>     # run in the specified directory
     >>>     pass
     """
 
     def __init__(self, directory="."):
-        self.directory = directory
+        self.path = os.path.realpath(directory)
 
     def __enter__(self):
         self.old_path = os.getcwd()
-        os.chdir(self.directory)
+        os.chdir(self.path)
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
@@ -40,6 +59,17 @@ class WorkDir(object):
             # do logging here traceback.print_exception(exc_type, exc_value, tb)
             return False
         return True
+
+    def __str__(self):
+        return self.path
+
+    def __truediv__(self, other):
+        return os.path.join(self.path, other)
+
+    def __len__(self):
+        return len(os.listdir(self.path))
+
+
 
 
 
