@@ -5,7 +5,9 @@ Python working directories.
 
 import os
 import pathlib
-from pyworkdir.util import WorkDirException
+import importlib.util
+import inspect
+from pyworkdir.util import WorkDirException, add_method
 
 
 class WorkDir(object):
@@ -45,9 +47,21 @@ class WorkDir(object):
     >>>     # everything in this context will
     >>>     # run in the specified directory
     >>>     pass
+
+    Extending the functionality:
+
+    ```
+    def custom_function(filename, workdir, a, b):
+        pass
+    ```
+
+
+    >>>
+
     """
 
-    def __init__(self, directory=".", mkdir=True):
+    def __init__(self, directory=".", mkdir=True, yaml_files=["workdir.yaml"], python_files=["workdir.py"],
+                 recursive_load_yaml=True, recursive_load_py=True):
         self.path = pathlib.Path(os.path.realpath(directory))
         self.scope_path = self.path
         if mkdir:
@@ -55,6 +69,11 @@ class WorkDir(object):
                 raise WorkDirException(f"Workdir could not be created. {self.path} is a file.")
             elif not self.path.is_dir():
                 os.mkdir(self.path)
+        self.logger = None
+        self.python_files = python_files
+        for pyfile in python_files:
+            if (self.path/pyfile).is_file():
+                self._initialize_from_pyfile(pyfile)
 
     def __enter__(self):
         self.scope_path = pathlib.Path.cwd()
@@ -101,8 +120,19 @@ class WorkDir(object):
             if os.path.isfile(element):
                 yield self.path/element if abs else pathlib.Path(element)
 
-
-
+    def _initialize_from_pyfile(self, pyfile):
+        """Initialize members of this WorkDir from a python file."""
+        spec = importlib.util.spec_from_file_location("workdir_module", self.path/pyfile)
+        pymod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pymod)
+        for (name, object) in inspect.getmembers(pymod):
+            object_wants_to_be_method = inspect.isfunction(object) and "workdir" in inspect.getfullargspec(object)[0]
+            if not name.startswith("_") and not inspect.ismodule(object):
+                if object_wants_to_be_method:
+                    print(inspect.getfullargspec(object))
+                    add_method(self, object, "workdir")
+                else:
+                    setattr(self, name, object)
 
 
 
