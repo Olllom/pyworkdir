@@ -17,6 +17,11 @@ Python working directories.
 ### Quickstart
 
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyworkdir/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
+
+```bash
+conda install -c conda-forge pyworkdir
+```
+
 #### Basic Usage
 
 ```python
