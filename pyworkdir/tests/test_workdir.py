@@ -153,7 +153,7 @@ def test_function_with_kwargs_added_as_method(tmpdir):
     """Test that workdir is accessible for functions that use workdir"""
     contents = textwrap.dedent(
         """
-        def jambalaya(a, workdir=".", b=4):
+        def jambalaya(a, workdir, b=4):
             return workdir.path, a+b
         """
     )
@@ -222,5 +222,22 @@ def test_recursive_pyfile(tmpdir):
     assert wd.custom_attributes["c"] == os.path.realpath(tmpdir/"workdir.py")
 
 
-def test_here_argument():
-    pass
+def test_here_argument(tmpdir):
+    """Test that the `here` parameter is replaced by the directory of the workdir.py"""
+    contents = textwrap.dedent(
+        """
+        def some_path(here, workdir, filename):
+            return workdir/filename, here/filename
+        """
+    )
+    with open(tmpdir/"workdir.py", "w") as f:
+        f.write(contents)
+    subdir = WorkDir(tmpdir/"subdir")
+    wd = WorkDir(tmpdir)
+    sub_wd, sub_here = subdir.some_path("file.txt")
+    parent_wd, parent_here = wd.some_path("file.txt")
+    assert str(parent_here) == os.path.join(tmpdir, "file.txt")
+    assert sub_here == parent_here
+    assert parent_here == parent_wd
+    assert sub_wd == subdir.path/"file.txt"
+

@@ -80,7 +80,8 @@ class WorkDir(object):
     >>> result = wd.custom_sum_function(a,b)
 
     By default, these attributes get added recursively from parent directories as well, where more specific
-    settings (further down in the directory tree) override more general ones.
+    settings (further down in the directory tree) override more general ones. This mimics a kind of inheritance,
+    where subdirectories inherit attributes from their parents.
 
     When defining functions in the workdir.py file, some argument names have special meaning:
     - The argument name `workdir` refers to the working directory instance.
@@ -159,14 +160,15 @@ class WorkDir(object):
             if name.startswith("_") or inspect.ismodule(object):
                 continue
             self.custom_attributes[name] = str(pyfile)
-            object_wants_to_be_method = inspect.isfunction(object) and "workdir" in inspect.getfullargspec(object)[0]
-            if object_wants_to_be_method:
-                add_method(self, object, "workdir")
+            if inspect.isfunction(object):
+                add_method(self, object, self_arg="workdir",
+                           replace_args={"here": pathlib.Path(os.path.dirname(pyfile))})
             else:
                 setattr(self, name, object)
 
     @staticmethod
     def _recursively_get_python_filenames(path, python_files, python_files_recursion, current_recursion_level=0):
+        """Get all python filenames that attributes should be read from."""
         this_dir_files = [path/pyfile for pyfile in python_files]
         if path.parent == path: # root directory
             return this_dir_files
