@@ -168,4 +168,59 @@ def test_function_with_kwargs_added_as_method(tmpdir):
     assert sum == 6
 
 
+def test_vars_and_classes_from_pyfile(tmpdir):
+    """Test that variables and classes from python files get added """
+    contents = textwrap.dedent(
+        """
+        import pyworkdir
+        
+        a = 2
+        
+        class A(pyworkdir.WorkDir):
+            pass
+        """
+    )
+    with open(tmpdir / "workdir.py", "w") as pyfile:
+        pyfile.write(contents)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "A")
+    assert hasattr(wd, "a")
+    assert wd.a == 2
+    assert issubclass(wd.A, WorkDir)
+    assert isinstance(wd.A(), WorkDir)
 
+
+def test_recursive_pyfile(tmpdir):
+    """Test that pyfiles are loaded recursively and that more specific settings override more general ones."""
+    contents = textwrap.dedent(
+        """
+        a = 2
+        b = 2
+        """
+    )
+    contents_parent = textwrap.dedent(
+        """
+        a = 3
+        c = 3
+        """
+    )
+    os.mkdir(tmpdir/"subdir")
+    with open(tmpdir/"subdir/workdir.py", "w") as f:
+        f.write(contents)
+    with open(tmpdir/"workdir.py", "w") as f:
+        f.write(contents_parent)
+    wd = WorkDir(tmpdir/"subdir")
+    assert hasattr(wd, "a")
+    assert hasattr(wd, "b")
+    assert hasattr(wd, "c")
+    assert wd.a == 2
+    assert wd.b == 2
+    assert wd.c == 3
+    # test custom attributes dict
+    assert wd.custom_attributes["a"] == os.path.realpath(tmpdir/"subdir/workdir.py")
+    assert wd.custom_attributes["b"] == os.path.realpath(tmpdir/"subdir/workdir.py")
+    assert wd.custom_attributes["c"] == os.path.realpath(tmpdir/"workdir.py")
+
+
+def test_here_argument():
+    pass
