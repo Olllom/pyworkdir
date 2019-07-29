@@ -221,6 +221,14 @@ def test_recursive_pyfile(tmpdir):
     assert wd.custom_attributes["b"] == os.path.realpath(tmpdir/"subdir/workdir.py")
     assert wd.custom_attributes["c"] == os.path.realpath(tmpdir/"workdir.py")
 
+    # assert non-recursive
+    wd = WorkDir(tmpdir/"subdir", python_files_recursion=0)
+    assert not hasattr(wd, "c")
+
+    # assert non-recursive
+    wd = WorkDir(tmpdir/"subdir", python_files_recursion=1)
+    assert hasattr(wd, "c")
+
 
 def test_here_argument(tmpdir):
     """Test that the `here` parameter is replaced by the directory of the workdir.py"""
