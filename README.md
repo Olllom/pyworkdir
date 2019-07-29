@@ -6,6 +6,7 @@ pyworkdir
 [![codecov](https://codecov.io/gh/olllom/pyworkdir/branch/master/graph/badge.svg)](https://codecov.io/gh/olllom/pyworkdir/branch/master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
 [![Maintainability](https://api.codeclimate.com/v1/badges/a9ff78c0b6ef41435c3d/maintainability)](https://codeclimate.com/github/Olllom/pyworkdir/maintainability)
+
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyworkdir/badges/version.svg)](https://anaconda.org/conda-forge/pyworkdir)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyworkdir/badges/downloads.svg)](https://anaconda.org/conda-forge/pyworkdir)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pyworkdir/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/pyworkdir)
@@ -32,38 +33,37 @@ with WorkDir("some_directory"):
     pass 
 ```
 
-#### Advanced Features
+#### Directories are Customizable Classes
 
-##### Custom Attributes
 Instances of `WorkDir` can be be customized by adding a file `workdir.py` to the directory.
-All variables, functions, or classes defined in this file will be added as attributes of 
+All variables, functions, or classes defined in this file will be added as attributes of
 the `WorkDir` instance.
 
-For instance, consider the following `workdir.py` file
+For instance, consider the following `workdir.py` file:
 ```python
 # -- workdir.py --
-def data_files(workdir, suffix=".dat"):
-    for f in workdir.files():
-        if f.endswith(suffix):
-            yield f
+def data_file(workdir, filename="data.csv"):
+    return workdir/filename
 ```
 
-The function `data_files` can now be accessed from other code as follows:
+The function can now be accessed from other code as follows:
+```python
+from pyworkdir import WorkDir
 
-```python 
 with WorkDir() as wd:
-    for data_file in wd.data_files():
-        print(data_file)
+    print(wd.data_file())
 ```
-Note that the function parameter `workdir` behaves as the `self` argument of the method. If `workdir` is not 
-an argument of the function, it behaves like a static method.
 
-By default, the `WorkDir` instance also recursively inherits attributes defined in its parent directory's `workdir.py` files.
+Note that the parameter `workdir` behaves like the `self` argument of the method. If `workdir` is not
+an argument of the function, the function behaves like a static method.
+
+By default, the `WorkDir` instance also recursively inherits attributes defined
+in its parent directory's `workdir.py` files.
 Therefore, subdirectories behave like subclasses.
 
-##### Yaml Files
+#### Yaml Files
 
-##### Changing Environment Variables
+#### Changing Environment Variables
 To be done.
 
 ### Documentation
