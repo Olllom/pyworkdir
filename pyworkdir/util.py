@@ -28,7 +28,7 @@ def recursively_get_filenames(path, filenames, recursion_depth, current_recursio
     recursion_depth : int
         The maximum recursion depth (0 = only current directory, 1 = current and parents).
         -1 means recurse until root.
-    current_recursion_level : int, Optional, default = 0,
+    current_recursion_level : int, Optional, default = 0
         Current recursion level of the function.
 
     Returns
