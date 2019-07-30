@@ -6,6 +6,7 @@ from pyworkdir import WorkDir, WorkDirException
 import pytest
 import pathlib
 import textwrap
+import logging
 import os
 
 
@@ -251,15 +252,43 @@ def test_here_argument(tmpdir):
 
 
 def test_environment():
+    """Test that environment variables are changed"""
     os.environ["JAMBAPATH"] = "set"
     wd = WorkDir(env={"jambalayalaya": "1", "JAMBAPATH":"."})
     assert not "jambalayalaya" in os.environ
     assert "JAMBAPATH" in os.environ
     with wd:
-        pass
-    #    assert "jambalayalaya" in os.environ
-    #    assert os.environ["jambalayalaya"] == "1"
-    #    assert os.environ["JAMBAPATH"] == "."
-    #assert not "jambalayalaya" in os.environ
-    #assert "JAMBAPATH" in os.environ
-    #assert os.environ["JAMBAPATH"] == "set"
+        assert "jambalayalaya" in os.environ
+        assert os.environ["jambalayalaya"] == "1"
+        assert os.environ["JAMBAPATH"] == "."
+    assert not "jambalayalaya" in os.environ
+    assert "JAMBAPATH" in os.environ
+    assert os.environ["JAMBAPATH"] == "set"
+
+
+def test_logging(tmpdir):
+    """Test logging with default configuration."""
+    wd = WorkDir(tmpdir)
+    assert wd.logger is None
+    assert not os.path.isfile(tmpdir/"workdir.log")
+    wd.log("Hi")
+    # File is created with first log
+    assert os.path.isfile(tmpdir/"workdir.log")
+    wd.log("Hello", logging.DEBUG)
+    wd.log("Bye", logging.WARN)
+    with open(tmpdir/"workdir.log") as f:
+        lines = f.readlines()
+        assert "Hi" in lines[0]
+        assert "Hello" in lines[1]
+        assert "Bye" in lines[2]
+
+
+def test_custom_loglevel_and_file(tmpdir):
+    """Test if custom logging settings are effective."""
+    wd = WorkDir(tmpdir, logfile="mylog.txt", loglevel_file=logging.INFO)
+    wd.log("Hello", logging.DEBUG)
+    wd.log("Bye", logging.WARN)
+    assert os.path.isfile(tmpdir/"mylog.txt")
+    with open(tmpdir/"mylog.txt") as f:
+        lines = f.readlines()
+        assert "Bye" in lines[0]

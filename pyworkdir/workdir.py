@@ -7,6 +7,8 @@ import os
 import pathlib
 import importlib.util
 import inspect
+import logging
+from copy import copy
 from pyworkdir.util import WorkDirException, add_method
 
 
@@ -34,6 +36,15 @@ class WorkDir(object):
         A dictionary. Keys (names of environment variables) and values (values of environment variables)
         have to be strings. Environment variables are temporarily set to these values within a context
         (a `with WorkDir() ...` block) and set to their original values outside the context.
+    logger : logging.Logger or None, Optional, default: None
+        A logger instance. If None, use a default logger. If a custom logger is specified,
+        the other arguments that concern the logger are not recognized.
+    logfile : str, Optional, default: "workdir.log"
+        The logfile to write output to.
+    loglevel_console : int, Optional, default: logging.INFO
+        The level of logging to the console.
+    loglevel_file : int, Optional, default: logging.DEBUG
+        The level of logging to the logfile.
 
     Attributes
     ----------
@@ -101,7 +112,8 @@ class WorkDir(object):
 
     """
     def __init__(self, directory=".", mkdir=True, python_files=["workdir.py"], yaml_files=["workdir.yaml"],
-                 python_files_recursion=-1, yaml_files_recursion=-1, env=dict()):
+                 python_files_recursion=-1, yaml_files_recursion=-1, env=dict(), logger=None, logfile="workdir.log",
+                 loglevel_console=logging.INFO, loglevel_file=logging.DEBUG):
         # augment keyword arguments from yaml files
         #specified_args = locals()
         #args, _, _, defaults, _, _, _ = inspect.getfullargspec(self.__init__)
@@ -109,7 +121,7 @@ class WorkDir(object):
         #default_args = {kwarg: value for kwarg,value in zip(args, defaults)}
         #kwargs = _get_construction_kwargs(locals(), )
         self.path = pathlib.Path(os.path.realpath(directory))
-        self.scope_path = self.path
+        self.scope_path = copy(self.path)
         self.custom_attributes = {}
         if mkdir:
             if self.path.is_file():
@@ -126,8 +138,14 @@ class WorkDir(object):
         for pyfile in self.python_files:
             if (self.path/pyfile).is_file():
                 self._initialize_from_pyfile(pyfile)
-        self.env = env
-        self.scope_env = env
+        # environment variables
+        self.env = copy(env)
+        self.scope_env = copy(env)
+        # logging
+        self.logger = logger
+        self.logfile = logfile
+        self.loglevel_console = loglevel_console
+        self.loglevel_file = loglevel_file
 
     def __enter__(self):
         self.scope_path = pathlib.Path.cwd()
@@ -185,6 +203,19 @@ class WorkDir(object):
             if os.path.isfile(element):
                 yield self.path/element if abs else pathlib.Path(element)
 
+    def log(self, message, level=logging.INFO):
+        """
+        Write logging output to the console and/or a log file.
+
+        Parameters
+        ----------
+        message : str
+        level : int, Optional, default: logging.DEBUG
+        """
+        if self.logger is None:
+            self._create_logger()
+        self.logger.log(level, message)
+
     def _initialize_from_pyfile(self, pyfile):
         """Initialize members of this WorkDir from a python file."""
         spec = importlib.util.spec_from_file_location("workdir_module", self.path/pyfile)
@@ -219,3 +250,23 @@ class WorkDir(object):
 
     def _initialize_from_yaml_file(self, yaml_file):
         pass
+
+    def _create_logger(self):
+        """Create a default logger."""
+        assert self.logger is None
+        # create logger instance
+        self.logger = logging.getLogger('{}'.format(self.path))
+        self.logger.setLevel(logging.DEBUG)
+        # File logging
+        log_file = self.path/self.logfile
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(self.loglevel_file)
+        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(file_formatter)
+        self.logger.addHandler(file_handler)
+        # Console logging
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(self.loglevel_console)
+        console_formatter = logging.Formatter('%(message)s')
+        console_handler.setFormatter(console_formatter)
+        self.logger.addHandler(console_handler)

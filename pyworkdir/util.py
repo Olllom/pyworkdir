@@ -51,7 +51,6 @@ def add_method(instance, func, self_arg=None, replace_args=dict()):
         for arg in replace_args:
             if arg in args:
                 fkwargs[arg] = replace_args[arg]
-        print(self_arg)
         if self_arg is not None and self_arg in args:
             fkwargs[self_arg] = self
         return func(**fkwargs)
