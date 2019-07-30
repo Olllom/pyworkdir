@@ -74,7 +74,7 @@ Yaml Files
 
 Environment variables and simple attributes can also be set through yaml files.
 The templates `{{ workdir }}` and `{{ here }}` are available and will be replaced by the working directory
-instance and the directory that contains the yaml file::
+instance and the directory that contains the yaml file, respectively::
 
     # -- workdir.yaml --
     environment:
