@@ -295,6 +295,7 @@ def test_custom_loglevel_and_file(tmpdir):
 
 
 def test_log_errors(tmpdir):
+    """Test if errors are written to the logfile."""
     wd = WorkDir(tmpdir, logfile="mylog.txt", loglevel_file=logging.INFO)
     wd.log("Hello", logging.DEBUG)
     with pytest.raises(AssertionError):
@@ -304,7 +305,8 @@ def test_log_errors(tmpdir):
         assert "AssertionError" in f.read()
 
 
-def test_yaml_env(tmpdir):
+def test_yaml_environment(tmpdir):
+    """Test that environment variables can be set through the yaml files."""
     contents = textwrap.dedent("""
     environment:
         a: 1
@@ -320,6 +322,7 @@ def test_yaml_env(tmpdir):
 
 
 def test_yaml_attributes(tmpdir):
+    """Test that attributes can be set from yaml files."""
     contents = textwrap.dedent("""
     environment:
         a: 1
@@ -336,6 +339,7 @@ def test_yaml_attributes(tmpdir):
 
 
 def test_yaml_templates(tmpdir):
+    """Test that templates are resolved in yaml files."""
     contents = textwrap.dedent("""
     environment:
         a: {{ workdir.__len__() }}
