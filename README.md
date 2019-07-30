@@ -69,7 +69,7 @@ Therefore, subdirectories behave like subclasses.
 ```python
 from pyworkdir import WorkDir
 
-with WorkDir(env={"MY_ENVIRONMENT_VARIABLE":"1"}):
+with WorkDir(environment={"MY_ENVIRONMENT_VARIABLE":"1"}):
     # in this context the environment variable is set
     pass
 
