@@ -249,3 +249,17 @@ def test_here_argument(tmpdir):
     assert parent_here == parent_wd
     assert sub_wd == subdir.path/"file.txt"
 
+
+def test_environment():
+    os.environ["JAMBAPATH"] = "set"
+    wd = WorkDir(env={"jambalayalaya": "1", "JAMBAPATH":"."})
+    assert not "jambalayalaya" in os.environ
+    assert "JAMBAPATH" in os.environ
+    with wd:
+        pass
+    #    assert "jambalayalaya" in os.environ
+    #    assert os.environ["jambalayalaya"] == "1"
+    #    assert os.environ["JAMBAPATH"] == "."
+    #assert not "jambalayalaya" in os.environ
+    #assert "JAMBAPATH" in os.environ
+    #assert os.environ["JAMBAPATH"] == "set"
