@@ -1,0 +1,12 @@
+# environment for building the docs
+name: pyworkdir
+channels:
+    - conda-forge
+dependencies:
+    - python
+    - setuptools
+    - cython
+    - sphinxcontrib-napoleon
+    - sphinxcontrib-bibtex
+    - pyyaml
+    - jinja2
