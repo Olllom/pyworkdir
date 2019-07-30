@@ -302,3 +302,50 @@ def test_log_errors(tmpdir):
             assert False
     with open(tmpdir/"mylog.txt") as f:
         assert "AssertionError" in f.read()
+
+
+def test_yaml_env(tmpdir):
+    contents = textwrap.dedent("""
+    environment:
+        a: 1
+        b: 2
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir):
+        assert "a" in os.environ
+        assert "b" in os.environ
+        assert os.environ["a"] == "1"
+        assert os.environ["b"] == "2"
+
+
+def test_yaml_attributes(tmpdir):
+    contents = textwrap.dedent("""
+    environment:
+        a: 1
+    attributes:
+        jambalayalaya: 2
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir) as wd:
+        assert "a" in os.environ
+        assert not "jambalayalaya" in os.environ
+        assert hasattr(wd, "jambalayalaya")
+        assert wd.jambalayalaya == 2
+
+
+def test_yaml_templates(tmpdir):
+    contents = textwrap.dedent("""
+    environment:
+        a: 1
+    attributes:
+        jambalayalaya: 2
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir) as wd:
+        assert "a" in os.environ
+        assert not "jambalayalaya" in os.environ
+        assert hasattr(wd, "jambalayalaya")
+        assert wd.jambalayalaya == 2

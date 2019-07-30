@@ -10,7 +10,9 @@ import inspect
 import logging
 import traceback
 from copy import copy
-from pyworkdir.util import WorkDirException, add_method
+from pyworkdir.util import WorkDirException, add_method, recursively_get_filenames, recursive_replace
+
+import yaml
 
 
 class WorkDir(object):
@@ -122,12 +124,6 @@ class WorkDir(object):
     def __init__(self, directory=".", mkdir=True, python_files=["workdir.py"], yaml_files=["workdir.yaml"],
                  python_files_recursion=-1, yaml_files_recursion=-1, env=dict(), logger=None, logfile="workdir.log",
                  loglevel_console=logging.INFO, loglevel_file=logging.DEBUG):
-        # augment keyword arguments from yaml files
-        #specified_args = locals()
-        #args, _, _, defaults, _, _, _ = inspect.getfullargspec(self.__init__)
-        #args.remove("self")
-        #default_args = {kwarg: value for kwarg,value in zip(args, defaults)}
-        #kwargs = _get_construction_kwargs(locals(), )
         self.path = pathlib.Path(os.path.realpath(directory))
         self.scope_path = copy(self.path)
         self.custom_attributes = {}
@@ -136,24 +132,25 @@ class WorkDir(object):
                 raise WorkDirException(f"Workdir could not be created. {self.path} is a file.")
             elif not self.path.is_dir():
                 os.mkdir(self.path)
-        # read yaml files
-        self.yaml_files = self._recursively_get_filenames(self.path, yaml_files, yaml_files_recursion)
-        for yaml_file in self.yaml_files:
-            if (self.path/yaml_file).is_file():
-                self._initialize_from_yaml_file(yaml_file)
         # read python files
-        self.python_files = self._recursively_get_filenames(self.path, python_files, python_files_recursion)
+        self.python_files = recursively_get_filenames(self.path, python_files, python_files_recursion)
         for pyfile in self.python_files:
             if (self.path/pyfile).is_file():
                 self._initialize_from_pyfile(pyfile)
-        # environment variables
-        self.env = copy(env)
-        self.scope_env = copy(env)
         # logging
         self.logger = logger
         self.logfile = logfile
         self.loglevel_console = loglevel_console
         self.loglevel_file = loglevel_file
+        # environment variables
+        self.env = dict()
+        # read yaml files
+        self.yaml_files = recursively_get_filenames(self.path, yaml_files, yaml_files_recursion)
+        for yaml_file in self.yaml_files:
+            if (self.path/yaml_file).is_file():
+                self._initialize_from_yaml_file(self.path/yaml_file)
+        self.env.update(env)
+        self.scope_env = copy(self.env)
 
     def __enter__(self):
         self.scope_path = pathlib.Path.cwd()
@@ -240,25 +237,15 @@ class WorkDir(object):
             else:
                 setattr(self, name, object)
 
-    @staticmethod
-    def _recursively_get_filenames(path, filenames, recursion_depth, current_recursion_level=0):
-        """Get all filenames (python/yaml) that attributes should be read from."""
-        this_dir_files = [path / pyfile for pyfile in filenames]
-        if path.parent == path: # root directory
-            return this_dir_files
-        elif recursion_depth == -1:
-            parentfiles = WorkDir._recursively_get_filenames(
-                path.parent, filenames, recursion_depth, current_recursion_level + 1)
-            return parentfiles + this_dir_files
-        elif current_recursion_level >= recursion_depth:
-            return this_dir_files
-        else:
-            parentfiles = WorkDir._recursively_get_filenames(
-                path.parent, filenames, recursion_depth, current_recursion_level + 1)
-            return parentfiles + this_dir_files
-
     def _initialize_from_yaml_file(self, yaml_file):
-        pass
+        with open(yaml_file, "r") as f:
+            dictionary = yaml.load(f, Loader=yaml.SafeLoader)
+            recursive_replace(dictionary, workdir=self, here=yaml_file.parent)
+            if "attributes" in dictionary:
+                for attribute in dictionary["attributes"]:
+                    setattr(self, attribute, dictionary["attributes"][attribute])
+            if "environment" in dictionary:
+                self.env.update(dictionary["environment"])
 
     def _create_logger(self):
         """Create a default logger."""

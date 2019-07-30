@@ -2,7 +2,9 @@
 Tests for utilities.
 """
 
-from pyworkdir.util import add_method
+from pyworkdir.util import add_method, recursive_replace, WorkDirException
+from collections.abc import Iterable
+import pytest
 
 
 def test_add_method_replace_args():
@@ -53,3 +55,14 @@ def test_add_staticmethod():
     add_method(instance, function_to_be_method)
     assert function_to_be_method(3) == 3
 
+
+def test_recursive_replace_no_templates():
+    assert recursive_replace("a") == "a"
+    assert recursive_replace(1) == 1
+    assert recursive_replace([1,2,3,"a"], a=1) == [1,2,3,"a"]
+    assert recursive_replace({1:2,2:{3:"a"}}, a=1) == {1:2,2:{3:"a"}}
+
+
+def test_recursive_replace():
+    assert recursive_replace("{{ a }}", a=1) == "1"
+    assert recursive_replace({1:"{{ a }}", 2:["{{ a }}","{{ c }}"]}, a=1, c=2) == {1:"1", 2:["1","2"]}

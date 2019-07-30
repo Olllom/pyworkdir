@@ -2,10 +2,11 @@
 Utilities for workdir
 """
 
-
+from collections.abc import Iterable
 import functools
 import inspect
 import types
+import jinja2
 from copy import copy
 
 
@@ -14,6 +15,43 @@ class WorkDirException(Exception):
     General exception class for pyworkdir module.
     """
     pass
+
+
+def recursively_get_filenames(path, filenames, recursion_depth, current_recursion_level=0):
+    """
+    Get all filenames (python/yaml) that attributes should be read from.
+
+    Parameters
+    ----------
+    path : str or path-like object
+        the current directory
+    filenames : str
+        The base filenames.
+    recursion_depth : int
+        The maximum recursion depth (0 = only current directory, 1 = current and parents).
+        -1 means recurse until root.
+    current_recursion_level : int, Optional, default = 0,
+        Current recursion level of the function.
+
+    Returns
+    -------
+    filenames: list
+        A list of filenames, where the ones further up front in the list are further up in the directory tree.
+        The files do not need to exist.
+    """
+    this_dir_files = [path / pyfile for pyfile in filenames]
+    if path.parent == path: # root directory
+        return this_dir_files
+    elif recursion_depth == -1:
+        parentfiles = recursively_get_filenames(
+            path.parent, filenames, recursion_depth, current_recursion_level + 1)
+        return parentfiles + this_dir_files
+    elif current_recursion_level >= recursion_depth:
+        return this_dir_files
+    else:
+        parentfiles = recursively_get_filenames(
+            path.parent, filenames, recursion_depth, current_recursion_level + 1)
+        return parentfiles + this_dir_files
 
 
 def add_method(instance, func, self_arg=None, replace_args=dict()):
@@ -57,3 +95,30 @@ def add_method(instance, func, self_arg=None, replace_args=dict()):
 
     setattr(instance, func.__name__, types.MethodType(method, instance))
 
+
+def update_dict_recursively(dictionary, updated):
+    for k, v in updated.items():
+        dv = dictionary.get(k, {})
+        if not isinstance(dv, dictionary):
+            dictionary[k] = v
+        elif isinstance(v, dictionary):
+            dictionary[k] = update_dict_recursively(dv, v)
+        else:
+            dictionary[k] = v
+    return dictionary
+
+
+def recursive_replace(iterable, **kwargs):
+    if isinstance(iterable, str):
+        return jinja2.Template(iterable).render(**kwargs)
+    elif isinstance(iterable, list):
+        return [recursive_replace(item, **kwargs) for item in iterable]
+    elif isinstance(iterable, dict):
+        return {
+            recursive_replace(key, **kwargs): recursive_replace(value, **kwargs)
+            for key,value in iterable.items()
+        }
+    elif isinstance(iterable, set):
+        return {recursive_replace(item) for item in iterable}
+    else:
+        return iterable

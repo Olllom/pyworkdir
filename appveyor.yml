@@ -25,7 +25,7 @@ install:
     # Try to update conda first to avoid odd dependency clashes
   - conda update --all
 
-
+    # required on appveyor
   - activate
 
     # Create test environment for package
