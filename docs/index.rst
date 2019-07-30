@@ -90,11 +90,15 @@ instance and the directory that contains the yaml file::
 
 The attributes and environment variables get added to the WorkDir::
 
+    import os
+
     with WorkDir() as wd:
         print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
-        for l in wd.my_list:
-             print(l)
+        for el in wd.my_list:
+             print(el)
         print(os.environ["VAR_ONE"])
+
+Note that environment variables passed to the constructor have preference over those in a yaml file.
 
 Logging
 -------
