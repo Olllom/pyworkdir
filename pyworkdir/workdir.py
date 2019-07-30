@@ -206,9 +206,7 @@ class WorkDir(object):
     def __exit__(self, exc_type, exc_value, tb):
         os.chdir(self.scope_path)
         for variable in self.scope_environment:
-            pass
             if self.scope_environment[variable] is None:
-                pass
                 del os.environ[variable]
             else:
                 os.environ[variable] = self.scope_environment[variable]
