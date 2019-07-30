@@ -2,11 +2,9 @@
 Utilities for workdir
 """
 
-from collections.abc import Iterable
 import functools
 import inspect
 import types
-import jinja2
 from copy import copy
 
 
@@ -94,31 +92,3 @@ def add_method(instance, func, self_arg=None, replace_args=dict()):
         return func(**fkwargs)
 
     setattr(instance, func.__name__, types.MethodType(method, instance))
-
-
-def update_dict_recursively(dictionary, updated):
-    for k, v in updated.items():
-        dv = dictionary.get(k, {})
-        if not isinstance(dv, dictionary):
-            dictionary[k] = v
-        elif isinstance(v, dictionary):
-            dictionary[k] = update_dict_recursively(dv, v)
-        else:
-            dictionary[k] = v
-    return dictionary
-
-
-def recursive_replace(iterable, **kwargs):
-    if isinstance(iterable, str):
-        return jinja2.Template(iterable).render(**kwargs)
-    elif isinstance(iterable, list):
-        return [recursive_replace(item, **kwargs) for item in iterable]
-    elif isinstance(iterable, dict):
-        return {
-            recursive_replace(key, **kwargs): recursive_replace(value, **kwargs)
-            for key,value in iterable.items()
-        }
-    elif isinstance(iterable, set):
-        return {recursive_replace(item) for item in iterable}
-    else:
-        return iterable

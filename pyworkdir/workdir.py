@@ -10,9 +10,10 @@ import inspect
 import logging
 import traceback
 from copy import copy
-from pyworkdir.util import WorkDirException, add_method, recursively_get_filenames, recursive_replace
+from pyworkdir.util import WorkDirException, add_method, recursively_get_filenames
 
 import yaml
+import jinja2
 
 
 class WorkDir(object):
@@ -239,8 +240,7 @@ class WorkDir(object):
 
     def _initialize_from_yaml_file(self, yaml_file):
         with open(yaml_file, "r") as f:
-            dictionary = yaml.load(f, Loader=yaml.SafeLoader)
-            recursive_replace(dictionary, workdir=self, here=yaml_file.parent)
+            dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yaml_file.parent), Loader=yaml.SafeLoader)
             if "attributes" in dictionary:
                 for attribute in dictionary["attributes"]:
                     setattr(self, attribute, dictionary["attributes"][attribute])
