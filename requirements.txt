@@ -1,4 +1,4 @@
-python>=3.6
+python
 pip
 jinja2
 pyyaml
