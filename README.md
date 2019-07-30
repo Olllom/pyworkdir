@@ -79,12 +79,12 @@ with WorkDir(environment={"MY_ENVIRONMENT_VARIABLE":"1"}):
 
 #### Yaml Files
 
-Environment variables and simple attributes can also be set through yaml files.
+Environment variables and simple attributes can also be set through yml files.
 The templates `{{ workdir }}` and `{{ here }}` are available and will be replaced by the working directory
-instance and the directory that contains the yaml file, respectively.
+instance and the directory that contains the yml file, respectively.
 
 ```
-# -- workdir.yaml --
+# -- workdir.yml --
 environment:
     VAR_ONE: "a"
 attributes:
@@ -107,7 +107,7 @@ with WorkDir() as wd:
 ```
 
 
-Note that environment variables passed to the constructor have preference over those in a yaml file.
+Note that environment variables passed to the constructor have preference over those in a yml file.
 
 
 #### Logging

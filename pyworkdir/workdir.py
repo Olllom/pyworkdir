@@ -29,13 +29,13 @@ class WorkDir(object):
     python_files : list of string, Optional, default: ["workdir.py"]
         A list of python files. All variables, functions, and classes defined
         in these files are added as members to customize the WorkDir.
-    yaml_files : list of string, Optional, default: ["workdir.yaml"]
+    yml_files : list of string, Optional, default: ["workdir.yml"]
         A list of configuration files to read a configuration from.
     python_files_recursion : int, Optional, default: -1
         Recursion level for loading python files from parent directories. 0 means only this directory, 1 means
         this directory and its parent directory, etc. If -1, recurse until root.
-    yaml_files_recursion : int, Optional, default: -1
-        Recursion level for yaml files.
+    yml_files_recursion : int, Optional, default: -1
+        Recursion level for yml files.
     environment : dict, Optional, default: dict()
         A dictionary. Keys (names of environment variables) and values (values of environment variables)
         have to be strings. Environment variables are temporarily set to these values within a context
@@ -114,12 +114,12 @@ class WorkDir(object):
     >>>     print(os.environ["VAR_ONE"])
     >>> assert "VAR_ONE" not in os.environ
 
-    Environment variables and simple attributes can also be set through yaml files.
+    Environment variables and simple attributes can also be set through yml files.
     The templates `{{ workdir }}` and `{{ here }}` are available and will be replaced by the working directory
-    instance and the directory that contains the yaml file, respectively.
+    instance and the directory that contains the yml file, respectively.
 
     ```
-    # -- workdir.yaml --
+    # -- workdir.yml --
     environment:
         VAR_ONE: "a"
     attributes:
@@ -138,7 +138,7 @@ class WorkDir(object):
     >>>          print(el)
     >>>     print(os.environ["VAR_ONE"])
 
-    Note that environment variables passed to the constructor have preference over those in a yaml file.
+    Note that environment variables passed to the constructor have preference over those in a yml file.
 
     A logging instance is available; the default output file is workdir.log:
 
@@ -154,9 +154,9 @@ class WorkDir(object):
             directory=".",
             mkdir=True,
             python_files=["workdir.py"],
-            yaml_files=["workdir.yaml"],
+            yml_files=["workdir.yml"],
             python_files_recursion=-1,
-            yaml_files_recursion=-1,
+            yml_files_recursion=-1,
             environment=dict(),
             logger=None,
             logfile="workdir.log",
@@ -186,11 +186,11 @@ class WorkDir(object):
         self.loglevel_file = loglevel_file
         # environment variables
         self.environment = dict()
-        # read yaml files
-        self.yaml_files = recursively_get_filenames(self.path, yaml_files, yaml_files_recursion)
-        for yaml_file in self.yaml_files:
-            if (self.path/yaml_file).is_file():
-                self._initialize_from_yaml_file(self.path/yaml_file)
+        # read yml files
+        self.yml_files = recursively_get_filenames(self.path, yml_files, yml_files_recursion)
+        for yml_file in self.yml_files:
+            if (self.path/yml_file).is_file():
+                self._initialize_from_yml_file(self.path/yml_file)
         self.environment.update(environment)
         self.scope_environment = copy(self.environment)
 
@@ -277,10 +277,10 @@ class WorkDir(object):
             else:
                 setattr(self, name, object)
 
-    def _initialize_from_yaml_file(self, yaml_file):
-        """Initialize members and environment variables from a yaml file."""
-        with open(yaml_file, "r") as f:
-            dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yaml_file.parent), Loader=yaml.SafeLoader)
+    def _initialize_from_yml_file(self, yml_file):
+        """Initialize members and environment variables from a yml file."""
+        with open(yml_file, "r") as f:
+            dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yml_file.parent), Loader=yaml.SafeLoader)
             if "attributes" in dictionary:
                 for attribute in dictionary["attributes"]:
                     setattr(self, attribute, dictionary["attributes"][attribute])

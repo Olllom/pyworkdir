@@ -305,14 +305,14 @@ def test_log_errors(tmpdir):
         assert "AssertionError" in f.read()
 
 
-def test_yaml_environment(tmpdir):
-    """Test that environment variables can be set through the yaml files."""
+def test_yml_environment(tmpdir):
+    """Test that environment variables can be set through the yml files."""
     contents = textwrap.dedent("""
     environment:
         a: 1
         b: 2
     """)
-    with open(tmpdir/"workdir.yaml", "w") as f:
+    with open(tmpdir/"workdir.yml", "w") as f:
         f.write(contents)
     with WorkDir(tmpdir):
         assert "a" in os.environ
@@ -321,15 +321,15 @@ def test_yaml_environment(tmpdir):
         assert os.environ["b"] == "2"
 
 
-def test_yaml_attributes(tmpdir):
-    """Test that attributes can be set from yaml files."""
+def test_yml_attributes(tmpdir):
+    """Test that attributes can be set from yml files."""
     contents = textwrap.dedent("""
     environment:
         a: 1
     attributes:
         jambalayalaya: 2
     """)
-    with open(tmpdir/"workdir.yaml", "w") as f:
+    with open(tmpdir/"workdir.yml", "w") as f:
         f.write(contents)
     with WorkDir(tmpdir) as wd:
         assert "a" in os.environ
@@ -338,15 +338,15 @@ def test_yaml_attributes(tmpdir):
         assert wd.jambalayalaya == 2
 
 
-def test_yaml_templates(tmpdir):
-    """Test that templates are resolved in yaml files."""
+def test_yml_templates(tmpdir):
+    """Test that templates are resolved in yml files."""
     contents = textwrap.dedent("""
     environment:
         a: {{ workdir.__len__() }}
     attributes:
         jambalayalaya: {{ here/"file.tmp" }}
     """)
-    with open(tmpdir/"workdir.yaml", "w") as f:
+    with open(tmpdir/"workdir.yml", "w") as f:
         f.write(contents)
     with WorkDir(tmpdir) as wd:
         assert "a" in os.environ
@@ -355,7 +355,7 @@ def test_yaml_templates(tmpdir):
         assert wd.jambalayalaya == tmpdir/"file.tmp"
 
 
-def test_yaml_comment(tmpdir):
+def test_yml_comment(tmpdir):
     """Test that comments are respected"""
     contents = textwrap.dedent("""
     # comment
@@ -364,7 +364,7 @@ def test_yaml_comment(tmpdir):
     attributes:
         jambalayalaya: {{ here/"file.tmp" }}
     """)
-    with open(tmpdir/"workdir.yaml", "w") as f:
+    with open(tmpdir/"workdir.yml", "w") as f:
         f.write(contents)
     with WorkDir(tmpdir) as wd:
         assert "a" in os.environ
