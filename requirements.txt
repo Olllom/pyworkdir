@@ -1,7 +1,10 @@
-python==3.6
+python>=3.6
 pip
 jinja2
 pyyaml
 pytest
 pytest-cov
 codecov
+Sphinx
+sphinx-rtd-theme
+sphinxcontrib-napoleon
