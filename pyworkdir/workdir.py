@@ -7,7 +7,6 @@ import os
 import pathlib
 import importlib.util
 import inspect
-import yaml
 from pyworkdir.util import WorkDirException, add_method
 
 
@@ -101,7 +100,6 @@ class WorkDir(object):
 
 
     """
-
     def __init__(self, directory=".", mkdir=True, python_files=["workdir.py"], yaml_files=["workdir.yaml"],
                  python_files_recursion=-1, yaml_files_recursion=-1, env=dict()):
         # augment keyword arguments from yaml files
