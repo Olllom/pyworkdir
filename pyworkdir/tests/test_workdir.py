@@ -338,14 +338,14 @@ def test_yaml_attributes(tmpdir):
 def test_yaml_templates(tmpdir):
     contents = textwrap.dedent("""
     environment:
-        a: 1
+        a: {{ workdir.__len__() }}
     attributes:
-        jambalayalaya: 2
+        jambalayalaya: {{ here/"file.tmp" }}
     """)
     with open(tmpdir/"workdir.yaml", "w") as f:
         f.write(contents)
     with WorkDir(tmpdir) as wd:
         assert "a" in os.environ
-        assert not "jambalayalaya" in os.environ
+        assert os.environ["a"] == "1"
         assert hasattr(wd, "jambalayalaya")
-        assert wd.jambalayalaya == 2
+        assert wd.jambalayalaya == tmpdir/"file.tmp"
