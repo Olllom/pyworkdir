@@ -8,6 +8,7 @@ import pathlib
 import importlib.util
 import inspect
 import logging
+import traceback
 from copy import copy
 from pyworkdir.util import WorkDirException, add_method
 
@@ -109,6 +110,13 @@ class WorkDir(object):
     >>>     print(os.environ["VAR_ONE"])
     >>> assert "VAR_ONE" not in os.environ
 
+    A logging instance is available; default output files is workdir.log:
+
+    >>> wd = WorkDir()
+    >>> wd.log("my message")
+    >>> import logging
+    >>> wd.log("debug info", level=logging.DEBUG)
+
 
     """
     def __init__(self, directory=".", mkdir=True, python_files=["workdir.py"], yaml_files=["workdir.yaml"],
@@ -166,7 +174,8 @@ class WorkDir(object):
             else:
                 os.environ[variable] = self.scope_env[variable]
         if exc_type is not None:
-            # do logging here traceback.print_exception(exc_type, exc_value, tb)
+            if self.logger is not None:
+                self.log(traceback.format_exc(), level=logging.ERROR)
             return False
         return True
 

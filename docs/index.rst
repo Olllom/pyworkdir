@@ -31,9 +31,9 @@ Changing the current working directory::
 Directories are Customizable Classes
 ------------------------------------
 
-Instances of `WorkDir` can be be customized by adding a file `workdir.py` to the directory.
+`WorkDir` classes can be be customized by adding a file `workdir.py` to the directory.
 All variables, functions, or classes defined in this file will be added as attributes of
-the `WorkDir` instance.
+the `WorkDir` instances.
 
 For instance, consider the following `workdir.py` file::
 
@@ -54,6 +54,35 @@ an argument of the function, the function behaves like a static method.
 By default, the `WorkDir` instance also recursively inherits attributes defined
 in its parent directory's `workdir.py` files.
 Therefore, subdirectories behave like subclasses.
+
+Changing Environment Variables
+------------------------------
+
+Temporary changes of the environment::
+
+    from pyworkdir import WorkDir
+
+    with WorkDir(env={"MY_ENVIRONMENT_VARIABLE":"1"}):
+        # in this context the environment variable is set
+        pass
+
+    # outside the context, it is not set any longer
+
+Logging
+-------
+
+A logger is available::
+
+    from pyworkdir import WorkDir
+    import logging
+
+    wd = WorkDir()
+    wd.log("a INFO-level message")
+    wd.log("a DEBUG-level message", logging.DEBUG)
+
+By default, INFO-level and higher is printed to the console.
+DEBUG-level output is only printed to a file `workdir.log`.
+
 
 Modules
 =======

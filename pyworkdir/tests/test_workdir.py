@@ -292,3 +292,13 @@ def test_custom_loglevel_and_file(tmpdir):
     with open(tmpdir/"mylog.txt") as f:
         lines = f.readlines()
         assert "Bye" in lines[0]
+
+
+def test_log_errors(tmpdir):
+    wd = WorkDir(tmpdir, logfile="mylog.txt", loglevel_file=logging.INFO)
+    wd.log("Hello", logging.DEBUG)
+    with pytest.raises(AssertionError):
+        with wd:
+            assert False
+    with open(tmpdir/"mylog.txt") as f:
+        assert "AssertionError" in f.read()
