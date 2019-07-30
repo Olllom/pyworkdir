@@ -68,6 +68,34 @@ Temporary changes of the environment::
 
     # outside the context, it is not set any longer
 
+
+Yaml Files
+----------
+
+Environment variables and simple attributes can also be set through yaml files.
+The templates `{{ workdir }}` and `{{ here }}` are available and will be replaced by the working directory
+instance and the directory that contains the yaml file::
+
+    # -- workdir.yaml --
+    environment:
+        VAR_ONE: "a"
+    attributes:
+        my_number: 1
+        my_list:
+            - 1
+            - 2
+            - 3
+        my_tmpdir: {{ here/"tmpdir" }}
+        my_local_tmpfile: {{ workdir/"file.tmp" }}
+
+The attributes and environment variables get added to the WorkDir::
+
+    with WorkDir() as wd:
+        print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
+        for l in wd.my_list:
+             print(l)
+        print(os.environ["VAR_ONE"])
+
 Logging
 -------
 

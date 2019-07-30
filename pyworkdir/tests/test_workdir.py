@@ -254,7 +254,7 @@ def test_here_argument(tmpdir):
 def test_environment():
     """Test that environment variables are changed"""
     os.environ["JAMBAPATH"] = "set"
-    wd = WorkDir(env={"jambalayalaya": "1", "JAMBAPATH":"."})
+    wd = WorkDir(environment={"jambalayalaya": "1", "JAMBAPATH": "."})
     assert not "jambalayalaya" in os.environ
     assert "JAMBAPATH" in os.environ
     with wd:
@@ -341,6 +341,24 @@ def test_yaml_attributes(tmpdir):
 def test_yaml_templates(tmpdir):
     """Test that templates are resolved in yaml files."""
     contents = textwrap.dedent("""
+    environment:
+        a: {{ workdir.__len__() }}
+    attributes:
+        jambalayalaya: {{ here/"file.tmp" }}
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir) as wd:
+        assert "a" in os.environ
+        assert os.environ["a"] == "1"
+        assert hasattr(wd, "jambalayalaya")
+        assert wd.jambalayalaya == tmpdir/"file.tmp"
+
+
+def test_yaml_comment(tmpdir):
+    """Test that comments are respected"""
+    contents = textwrap.dedent("""
+    # comment
     environment:
         a: {{ workdir.__len__() }}
     attributes:
