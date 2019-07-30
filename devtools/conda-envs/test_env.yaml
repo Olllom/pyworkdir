@@ -4,6 +4,8 @@ dependencies:
     # Base depends
   - python
   - pip
+  - jinja2
+  - pyyaml
 
     # Testing
   - pytest

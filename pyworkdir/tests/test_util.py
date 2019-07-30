@@ -52,4 +52,3 @@ def test_add_staticmethod():
 
     add_method(instance, function_to_be_method)
     assert function_to_be_method(3) == 3
-

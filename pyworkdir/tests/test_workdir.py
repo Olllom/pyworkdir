@@ -6,6 +6,7 @@ from pyworkdir import WorkDir, WorkDirException
 import pytest
 import pathlib
 import textwrap
+import logging
 import os
 
 
@@ -249,3 +250,124 @@ def test_here_argument(tmpdir):
     assert parent_here == parent_wd
     assert sub_wd == subdir.path/"file.txt"
 
+
+def test_environment():
+    """Test that environment variables are changed"""
+    os.environ["JAMBAPATH"] = "set"
+    wd = WorkDir(environment={"jambalayalaya": "1", "JAMBAPATH": "."})
+    assert not "jambalayalaya" in os.environ
+    assert "JAMBAPATH" in os.environ
+    with wd:
+        assert "jambalayalaya" in os.environ
+        assert os.environ["jambalayalaya"] == "1"
+        assert os.environ["JAMBAPATH"] == "."
+    assert not "jambalayalaya" in os.environ
+    assert "JAMBAPATH" in os.environ
+    assert os.environ["JAMBAPATH"] == "set"
+
+
+def test_logging(tmpdir):
+    """Test logging with default configuration."""
+    wd = WorkDir(tmpdir)
+    assert wd.logger is None
+    assert not os.path.isfile(tmpdir/"workdir.log")
+    wd.log("Hi")
+    # File is created with first log
+    assert os.path.isfile(tmpdir/"workdir.log")
+    wd.log("Hello", logging.DEBUG)
+    wd.log("Bye", logging.WARN)
+    with open(tmpdir/"workdir.log") as f:
+        lines = f.readlines()
+        assert "Hi" in lines[0]
+        assert "Hello" in lines[1]
+        assert "Bye" in lines[2]
+
+
+def test_custom_loglevel_and_file(tmpdir):
+    """Test if custom logging settings are effective."""
+    wd = WorkDir(tmpdir, logfile="mylog.txt", loglevel_file=logging.INFO)
+    wd.log("Hello", logging.DEBUG)
+    wd.log("Bye", logging.WARN)
+    assert os.path.isfile(tmpdir/"mylog.txt")
+    with open(tmpdir/"mylog.txt") as f:
+        lines = f.readlines()
+        assert "Bye" in lines[0]
+
+
+def test_log_errors(tmpdir):
+    """Test if errors are written to the logfile."""
+    wd = WorkDir(tmpdir, logfile="mylog.txt", loglevel_file=logging.INFO)
+    wd.log("Hello", logging.DEBUG)
+    with pytest.raises(AssertionError):
+        with wd:
+            assert False
+    with open(tmpdir/"mylog.txt") as f:
+        assert "AssertionError" in f.read()
+
+
+def test_yaml_environment(tmpdir):
+    """Test that environment variables can be set through the yaml files."""
+    contents = textwrap.dedent("""
+    environment:
+        a: 1
+        b: 2
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir):
+        assert "a" in os.environ
+        assert "b" in os.environ
+        assert os.environ["a"] == "1"
+        assert os.environ["b"] == "2"
+
+
+def test_yaml_attributes(tmpdir):
+    """Test that attributes can be set from yaml files."""
+    contents = textwrap.dedent("""
+    environment:
+        a: 1
+    attributes:
+        jambalayalaya: 2
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir) as wd:
+        assert "a" in os.environ
+        assert not "jambalayalaya" in os.environ
+        assert hasattr(wd, "jambalayalaya")
+        assert wd.jambalayalaya == 2
+
+
+def test_yaml_templates(tmpdir):
+    """Test that templates are resolved in yaml files."""
+    contents = textwrap.dedent("""
+    environment:
+        a: {{ workdir.__len__() }}
+    attributes:
+        jambalayalaya: {{ here/"file.tmp" }}
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir) as wd:
+        assert "a" in os.environ
+        assert os.environ["a"] == "1"
+        assert hasattr(wd, "jambalayalaya")
+        assert wd.jambalayalaya == tmpdir/"file.tmp"
+
+
+def test_yaml_comment(tmpdir):
+    """Test that comments are respected"""
+    contents = textwrap.dedent("""
+    # comment
+    environment:
+        a: {{ workdir.__len__() }}
+    attributes:
+        jambalayalaya: {{ here/"file.tmp" }}
+    """)
+    with open(tmpdir/"workdir.yaml", "w") as f:
+        f.write(contents)
+    with WorkDir(tmpdir) as wd:
+        assert "a" in os.environ
+        assert os.environ["a"] == "1"
+        assert hasattr(wd, "jambalayalaya")
+        assert wd.jambalayalaya == tmpdir/"file.tmp"

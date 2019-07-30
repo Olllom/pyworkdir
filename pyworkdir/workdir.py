@@ -7,7 +7,13 @@ import os
 import pathlib
 import importlib.util
 import inspect
-from pyworkdir.util import WorkDirException, add_method
+import logging
+import traceback
+from copy import copy
+from pyworkdir.util import WorkDirException, add_method, recursively_get_filenames
+
+import yaml
+import jinja2
 
 
 class WorkDir(object):
@@ -30,6 +36,19 @@ class WorkDir(object):
         this directory and its parent directory, etc. If -1, recurse until root.
     yaml_files_recursion : int, Optional, default: -1
         Recursion level for yaml files.
+    environment : dict, Optional, default: dict()
+        A dictionary. Keys (names of environment variables) and values (values of environment variables)
+        have to be strings. Environment variables are temporarily set to these values within a context
+        (a `with WorkDir() ...` block) and set to their original values outside the context.
+    logger : logging.Logger or None, Optional, default: None
+        A logger instance. If None, use a default logger. If a custom logger is specified,
+        the other arguments that concern the logger are not recognized.
+    logfile : str, Optional, default: "workdir.log"
+        The logfile to write output to.
+    loglevel_console : int, Optional, default: logging.INFO
+        The level of logging to the console.
+    loglevel_file : int, Optional, default: logging.DEBUG
+        The level of logging to the logfile.
 
     Attributes
     ----------
@@ -88,12 +107,67 @@ class WorkDir(object):
       It represents the `self` argument of the method.
     - The argument name `here` refers to the absolute path of the directory that contains the workdir.py file.
 
-    """
+    Environment variables can be changed inside a context as follows.
 
-    def __init__(self, directory=".", mkdir=True, python_files=["workdir.py"], yaml_files=["workdir.yaml"],
-                 python_files_recursion=-1, yaml_files_recursion=-1):
+    >>> import os
+    >>> with WorkDir(environment={"VAR_ONE": "ONE", "VAR_TWO": "TWO"}):
+    >>>     print(os.environ["VAR_ONE"])
+    >>> assert "VAR_ONE" not in os.environ
+
+    Environment variables and simple attributes can also be set through yaml files.
+    The templates `{{ workdir }}` and `{{ here }}` are available and will be replaced by the working directory
+    instance and the yaml file.
+
+    ```
+    # -- workdir.yaml --
+    environment:
+        VAR_ONE: "a"
+    attributes:
+        my_number: 1
+        my_list:
+            - 1
+            - 2
+            - 3
+        my_tmpdir: {{ here/"tmpdir" }}
+        my_local_tmpfile: {{ workdir/"file.tmp" }}
+    ```
+
+    >>> with WorkDir() as wd:
+    >>>     print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
+    >>>     for el in wd.my_list:
+    >>>          print(el)
+    >>>     print(os.environ["VAR_ONE"])
+
+    Note that environment variables passed to the constructor have preference over those in a yaml file.
+
+    A logging instance is available; the default output file is workdir.log:
+
+    >>> wd = WorkDir()
+    >>> wd.log("my message")
+    >>> import logging
+    >>> wd.log("debug info", level=logging.DEBUG)
+
+
+    """
+    def __init__(
+            self,
+            directory=".",
+            mkdir=True,
+            python_files=["workdir.py"],
+            yaml_files=["workdir.yaml"],
+            python_files_recursion=-1,
+            yaml_files_recursion=-1,
+            environment=dict(),
+            logger=None,
+            logfile="workdir.log",
+            loglevel_console=logging.INFO,
+            loglevel_file=logging.DEBUG
+    ):
+        """
+        Constructor
+        """
         self.path = pathlib.Path(os.path.realpath(directory))
-        self.scope_path = self.path
+        self.scope_path = copy(self.path)
         self.custom_attributes = {}
         if mkdir:
             if self.path.is_file():
@@ -101,20 +175,44 @@ class WorkDir(object):
             elif not self.path.is_dir():
                 os.mkdir(self.path)
         # read python files
-        self.python_files = self._recursively_get_python_filenames(self.path, python_files, python_files_recursion)
+        self.python_files = recursively_get_filenames(self.path, python_files, python_files_recursion)
         for pyfile in self.python_files:
             if (self.path/pyfile).is_file():
                 self._initialize_from_pyfile(pyfile)
+        # logging
+        self.logger = logger
+        self.logfile = logfile
+        self.loglevel_console = loglevel_console
+        self.loglevel_file = loglevel_file
+        # environment variables
+        self.environment = dict()
+        # read yaml files
+        self.yaml_files = recursively_get_filenames(self.path, yaml_files, yaml_files_recursion)
+        for yaml_file in self.yaml_files:
+            if (self.path/yaml_file).is_file():
+                self._initialize_from_yaml_file(self.path/yaml_file)
+        self.environment.update(environment)
+        self.scope_environment = copy(self.environment)
 
     def __enter__(self):
         self.scope_path = pathlib.Path.cwd()
         os.chdir(str(self.path))
+        if self.environment:
+            for variable in self.environment:
+                self.scope_environment[variable] = os.environ.get(variable, None)
+                os.environ[variable] = str(self.environment[variable])
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         os.chdir(self.scope_path)
+        for variable in self.scope_environment:
+            if self.scope_environment[variable] is None:
+                del os.environ[variable]
+            else:
+                os.environ[variable] = self.scope_environment[variable]
         if exc_type is not None:
-            # do logging here traceback.print_exception(exc_type, exc_value, tb)
+            if self.logger is not None:
+                self.log(traceback.format_exc(), level=logging.ERROR)
             return False
         return True
 
@@ -151,6 +249,19 @@ class WorkDir(object):
             if os.path.isfile(element):
                 yield self.path/element if abs else pathlib.Path(element)
 
+    def log(self, message, level=logging.INFO):
+        """
+        Write logging output to the console and/or a log file.
+
+        Parameters
+        ----------
+        message : str
+        level : int, Optional, default: logging.DEBUG
+        """
+        if self.logger is None:
+            self._create_logger()
+        self.logger.log(level, message)
+
     def _initialize_from_pyfile(self, pyfile):
         """Initialize members of this WorkDir from a python file."""
         spec = importlib.util.spec_from_file_location("workdir_module", self.path/pyfile)
@@ -166,21 +277,32 @@ class WorkDir(object):
             else:
                 setattr(self, name, object)
 
-    @staticmethod
-    def _recursively_get_python_filenames(path, python_files, python_files_recursion, current_recursion_level=0):
-        """Get all python filenames that attributes should be read from."""
-        this_dir_files = [path/pyfile for pyfile in python_files]
-        if path.parent == path: # root directory
-            return this_dir_files
-        elif python_files_recursion == -1:
-            parentfiles = WorkDir._recursively_get_python_filenames(
-                path.parent, python_files, python_files_recursion, current_recursion_level+1)
-            return parentfiles + this_dir_files
-        elif current_recursion_level >= python_files_recursion:
-            return this_dir_files
-        else:
-            parentfiles = WorkDir._recursively_get_python_filenames(
-                path.parent, python_files, python_files_recursion, current_recursion_level+1)
-            return parentfiles + this_dir_files
+    def _initialize_from_yaml_file(self, yaml_file):
+        """Initialize members and environment variables from a yaml file."""
+        with open(yaml_file, "r") as f:
+            dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yaml_file.parent), Loader=yaml.SafeLoader)
+            if "attributes" in dictionary:
+                for attribute in dictionary["attributes"]:
+                    setattr(self, attribute, dictionary["attributes"][attribute])
+            if "environment" in dictionary:
+                self.environment.update(dictionary["environment"])
 
-
+    def _create_logger(self):
+        """Create a default logger."""
+        assert self.logger is None
+        # create logger instance
+        self.logger = logging.getLogger('{}'.format(self.path))
+        self.logger.setLevel(logging.DEBUG)
+        # File logging
+        log_file = self.path/self.logfile
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(self.loglevel_file)
+        file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(file_formatter)
+        self.logger.addHandler(file_handler)
+        # Console logging
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(self.loglevel_console)
+        console_formatter = logging.Formatter('%(message)s')
+        console_handler.setFormatter(console_formatter)
+        self.logger.addHandler(console_handler)
