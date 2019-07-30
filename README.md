@@ -94,11 +94,15 @@ attributes:
     my_local_tmpfile: {{ workdir/"file.tmp" }}
 ```
 
->>> with WorkDir() as wd:
->>>     print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
->>>     for el in wd.my_list:
->>>          print(el)
->>>     print(os.environ["VAR_ONE"])
+```python
+from pyworkdir import WorkDir
+with WorkDir() as wd:
+    print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
+    for el in wd.my_list:
+        print(el)
+    print(os.environ["VAR_ONE"])
+```
+
 
 Note that environment variables passed to the constructor have preference over those in a yaml file.
 
