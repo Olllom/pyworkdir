@@ -7,6 +7,7 @@ import os
 import pathlib
 import importlib.util
 import inspect
+import yaml
 from pyworkdir.util import WorkDirException, add_method
 
 
@@ -30,6 +31,10 @@ class WorkDir(object):
         this directory and its parent directory, etc. If -1, recurse until root.
     yaml_files_recursion : int, Optional, default: -1
         Recursion level for yaml files.
+    env : dict, Optional, default: dict()
+        A dictionary. Keys (names of environment variables) and values (values of environment variables)
+        have to be strings. Environment variables are temporarily set to these values within a context
+        (a `with WorkDir() ...` block) and set to their original values outside the context.
 
     Attributes
     ----------
@@ -88,10 +93,23 @@ class WorkDir(object):
       It represents the `self` argument of the method.
     - The argument name `here` refers to the absolute path of the directory that contains the workdir.py file.
 
+    Environment variables can be changed inside a context as follows.
+
+    >>> with WorkDir(env={"VAR_ONE": "ONE", "VAR_TWO": "TWO"}):
+    >>>     print(os.environ["VAR_ONE"])
+    >>> assert "VAR_ONE" not in os.environ
+
+
     """
 
     def __init__(self, directory=".", mkdir=True, python_files=["workdir.py"], yaml_files=["workdir.yaml"],
-                 python_files_recursion=-1, yaml_files_recursion=-1):
+                 python_files_recursion=-1, yaml_files_recursion=-1, env=dict()):
+        # augment keyword arguments from yaml files
+        #specified_args = locals()
+        #args, _, _, defaults, _, _, _ = inspect.getfullargspec(self.__init__)
+        #args.remove("self")
+        #default_args = {kwarg: value for kwarg,value in zip(args, defaults)}
+        #kwargs = _get_construction_kwargs(locals(), )
         self.path = pathlib.Path(os.path.realpath(directory))
         self.scope_path = self.path
         self.custom_attributes = {}
@@ -100,19 +118,37 @@ class WorkDir(object):
                 raise WorkDirException(f"Workdir could not be created. {self.path} is a file.")
             elif not self.path.is_dir():
                 os.mkdir(self.path)
+        # read yaml files
+        self.yaml_files = self._recursively_get_filenames(self.path, yaml_files, yaml_files_recursion)
+        for yaml_file in self.yaml_files:
+            if (self.path/yaml_file).is_file():
+                self._initialize_from_yaml_file(yaml_file)
         # read python files
-        self.python_files = self._recursively_get_python_filenames(self.path, python_files, python_files_recursion)
+        self.python_files = self._recursively_get_filenames(self.path, python_files, python_files_recursion)
         for pyfile in self.python_files:
             if (self.path/pyfile).is_file():
                 self._initialize_from_pyfile(pyfile)
+        self.env = env
+        self.scope_env = env
 
     def __enter__(self):
         self.scope_path = pathlib.Path.cwd()
         os.chdir(str(self.path))
+        if self.env:
+            for variable in self.env:
+                self.scope_env[variable] = os.environ.get(variable, None)
+                os.environ[variable] = str(self.env[variable])
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         os.chdir(self.scope_path)
+        for variable in self.scope_env:
+            pass
+            if self.scope_env[variable] is None:
+                pass
+                del os.environ[variable]
+            else:
+                os.environ[variable] = self.scope_env[variable]
         if exc_type is not None:
             # do logging here traceback.print_exception(exc_type, exc_value, tb)
             return False
@@ -167,20 +203,21 @@ class WorkDir(object):
                 setattr(self, name, object)
 
     @staticmethod
-    def _recursively_get_python_filenames(path, python_files, python_files_recursion, current_recursion_level=0):
-        """Get all python filenames that attributes should be read from."""
-        this_dir_files = [path/pyfile for pyfile in python_files]
+    def _recursively_get_filenames(path, filenames, recursion_depth, current_recursion_level=0):
+        """Get all filenames (python/yaml) that attributes should be read from."""
+        this_dir_files = [path / pyfile for pyfile in filenames]
         if path.parent == path: # root directory
             return this_dir_files
-        elif python_files_recursion == -1:
-            parentfiles = WorkDir._recursively_get_python_filenames(
-                path.parent, python_files, python_files_recursion, current_recursion_level+1)
+        elif recursion_depth == -1:
+            parentfiles = WorkDir._recursively_get_filenames(
+                path.parent, filenames, recursion_depth, current_recursion_level + 1)
             return parentfiles + this_dir_files
-        elif current_recursion_level >= python_files_recursion:
+        elif current_recursion_level >= recursion_depth:
             return this_dir_files
         else:
-            parentfiles = WorkDir._recursively_get_python_filenames(
-                path.parent, python_files, python_files_recursion, current_recursion_level+1)
+            parentfiles = WorkDir._recursively_get_filenames(
+                path.parent, filenames, recursion_depth, current_recursion_level + 1)
             return parentfiles + this_dir_files
 
-
+    def _initialize_from_yaml_file(self, yaml_file):
+        pass
