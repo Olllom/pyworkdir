@@ -137,19 +137,17 @@ class WorkDir(object):
     The templates `{{ workdir }}` and `{{ here }}` are available and will be replaced by the working directory
     instance and the directory that contains the yml file, respectively.
 
-    ```
-    # -- workdir.yml --
-    environment:
-        VAR_ONE: "a"
-    attributes:
-        my_number: 1
-        my_list:
-            - 1
-            - 2
-            - 3
-        my_tmpdir: {{ here/"tmpdir" }}
-        my_local_tmpfile: {{ workdir/"file.tmp" }}
-    ```
+    >>> # -- workdir.yml --
+    >>> environment:
+    >>>     VAR_ONE: "a"
+    >>> attributes:
+    >>>     my_number: 1
+    >>>     my_list:
+    >>>         - 1
+    >>>         - 2
+    >>>         - 3
+    >>>     my_tmpdir: {{ here/"tmpdir" }}
+    >>>     my_local_tmpfile: {{ workdir/"file.tmp" }}
 
     >>> with WorkDir() as wd:
     >>>     print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
