@@ -4,7 +4,7 @@ Utilities for workdir
 
 import functools
 import inspect
-import types
+import click
 from copy import copy
 
 
@@ -52,7 +52,7 @@ def recursively_get_filenames(path, filenames, recursion_depth, current_recursio
         return parentfiles + this_dir_files
 
 
-def add_method(instance, func, self_arg=None, replace_args=dict()):
+def add_method(instance, func, replace_args=dict()):
     """
     Add a method to an object.
 
@@ -62,9 +62,6 @@ def add_method(instance, func, self_arg=None, replace_args=dict()):
         The instance to which the function should be added as a method
     func : function
         The function to be added to the instance
-    self_arg : str or None, Optional, default = None
-        The argument to be interpreted as self, representing the instance. The default is None, where
-        the method behaves as a classmethod.
     replace_args : dict, Optional, default = dict()
         Any arguments that are replaced by default values in the spirit of functools.partial.
     """
@@ -75,20 +72,24 @@ def add_method(instance, func, self_arg=None, replace_args=dict()):
     for arg in replace_args:
         if arg in newargs:
             newargs.remove(arg)
-    if self_arg is not None:
-        if self_arg in newargs:
-            newargs.remove(self_arg)
 
     @functools.wraps(func)
-    def method(self, *fargs, **fkwargs):
+    def method(*fargs, **fkwargs):
         # turn arguments into keyword arguments
         for i, arg in enumerate(fargs):
             fkwargs[newargs[i]] = arg
         for arg in replace_args:
             if arg in args:
                 fkwargs[arg] = replace_args[arg]
-        if self_arg is not None and self_arg in args:
-            fkwargs[self_arg] = self
         return func(**fkwargs)
 
-    setattr(instance, func.__name__, types.MethodType(method, instance))
+    # enable replace_args for click command-line interface
+    for arg in replace_args:
+        if arg in newargs:
+            method = click.option(
+                "--{}".format(arg.replace("_","-").replace(" ","-")),
+                default=replace_args[arg],
+                hidden=True
+            )(method)
+
+    setattr(instance, func.__name__, method)

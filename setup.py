@@ -23,6 +23,7 @@ setup(
     # Self-descriptive entries which should always be present
     name='pyworkdir',
     author='Andreas Krämer',
+    entry_points={'console_scripts': ['workdir=pyworkdir.main:entrypoint']},
     author_email='kraemer.research@gmail.com',
     description=short_description[0],
     long_description=long_description,

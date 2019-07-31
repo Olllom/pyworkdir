@@ -23,24 +23,6 @@ def test_add_method_replace_args():
     assert not hasattr(instance2, "function_to_be_method")
 
 
-def test_add_method_self_arg():
-    """Test adding a method using the self_arg argument."""
-    class A(object):
-        def __init__(self, value):
-            self.internal_value = value
-
-    def function_to_be_method(b, instance):
-        return b + instance.internal_value
-
-    instance = A(2)
-    add_method(instance, function_to_be_method, self_arg="instance")
-    assert hasattr(instance, "function_to_be_method")
-    assert instance.function_to_be_method(3) == 5
-
-    instance2 = A(3)
-    assert not hasattr(instance2, "function_to_be_method")
-
-
 def test_add_staticmethod():
     """Test adding custom static methods."""
     class A(object):
