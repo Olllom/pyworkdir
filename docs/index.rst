@@ -180,6 +180,15 @@ util
     :undoc-members:
     :show-inheritance:
 
+
+main
+----
+
+.. automodule:: pyworkdir.main
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Indices and tables
 ==================
 
