@@ -52,9 +52,9 @@ def recursively_get_filenames(path, filenames, recursion_depth, current_recursio
         return parentfiles + this_dir_files
 
 
-def add_method(instance, func, replace_args=dict()):
+def add_function(instance, func, replace_args=dict()):
     """
-    Add a method to an object.
+    Add a function to an object.
 
     Parameters
     ----------
@@ -64,6 +64,12 @@ def add_method(instance, func, replace_args=dict()):
         The function to be added to the instance
     replace_args : dict, Optional, default = dict()
         Any arguments that are replaced by default values in the spirit of functools.partial.
+
+    Notes:
+    ------
+    This function takes care of click-decorated functions. They retain
+    their __click_params__ field; also all `replace_args`
+    get added as hidden options so that they are not visible on the command line interface.
     """
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = (
         inspect.getfullargspec(func)

@@ -9,3 +9,4 @@ dependencies:
     - sphinxcontrib-bibtex
     - pyyaml
     - jinja2
+    - click

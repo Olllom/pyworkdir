@@ -10,7 +10,14 @@ import click
 
 
 def forge_command_line_interface(*args, **kwargs):
-    """Forge the click.Group that holds all commands defined in workdir.py"""
+    """
+    Forge the click.Group that holds all commands defined in workdir.py
+    All arguments are forwarded to the constructor of WorkDir.
+
+    Returns
+    -------
+    A click.Group that defines one command for every custom function in the WorkDir.
+    """
     wd = WorkDir(*args, **kwargs)
     main = click.Group(
         name="workdir",
@@ -30,6 +37,8 @@ def forge_command_line_interface(*args, **kwargs):
 
 
 def entrypoint():
-    """Entrypoint for the workdir command. """
+    """
+    Entrypoint for the workdir command.
+    """
     command_group = forge_command_line_interface()
     command_group()

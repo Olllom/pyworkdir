@@ -11,5 +11,5 @@ __git_revision__ = versions['full-revisionid']
 del get_versions, versions
 
 # Add imports here
-from pyworkdir.util import WorkDirException, recursively_get_filenames, add_method
+from pyworkdir.util import WorkDirException, recursively_get_filenames, add_function
 from pyworkdir.workdir import WorkDir

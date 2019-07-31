@@ -6,6 +6,7 @@ dependencies:
   - pip
   - jinja2
   - pyyaml
+  - click
 
     # Testing
   - pytest

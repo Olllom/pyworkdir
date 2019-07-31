@@ -2,7 +2,7 @@
 Tests for utilities.
 """
 
-from pyworkdir.util import add_method
+from pyworkdir.util import add_function
 
 
 def test_add_method_replace_args():
@@ -15,7 +15,7 @@ def test_add_method_replace_args():
         return b + instance.internal_value
 
     instance = A(2)
-    add_method(instance, function_to_be_method, replace_args={"instance": instance})
+    add_function(instance, function_to_be_method, replace_args={"instance": instance})
     assert hasattr(instance, "function_to_be_method")
     assert instance.function_to_be_method(3) == 5
 
@@ -32,5 +32,5 @@ def test_add_staticmethod():
         return b
     instance = A()
 
-    add_method(instance, function_to_be_method)
+    add_function(instance, function_to_be_method)
     assert function_to_be_method(3) == 3

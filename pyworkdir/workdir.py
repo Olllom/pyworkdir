@@ -10,7 +10,7 @@ import inspect
 import logging
 import traceback
 from copy import copy
-from pyworkdir.util import WorkDirException, add_method, recursively_get_filenames
+from pyworkdir.util import WorkDirException, add_function, recursively_get_filenames
 
 import yaml
 import jinja2
@@ -291,7 +291,7 @@ class WorkDir(object):
                 continue
             self.custom_attributes[name] = str(pyfile)
             if inspect.isfunction(object):
-                add_method(
+                add_function(
                     self,
                     object,
                     replace_args={"workdir": self, "here": pathlib.Path(os.path.dirname(pyfile))}
