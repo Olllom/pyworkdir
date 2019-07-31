@@ -91,7 +91,7 @@ def add_function(instance, func, replace_args=dict()):
 
     # enable replace_args for click command-line interface
     for arg in replace_args:
-        if arg in newargs:
+        if arg in args:
             method = click.option(
                 "--{}".format(arg.replace("_","-").replace(" ","-")),
                 default=replace_args[arg],

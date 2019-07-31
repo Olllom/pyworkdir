@@ -34,3 +34,22 @@ def test_add_staticmethod():
 
     add_function(instance, function_to_be_method)
     assert function_to_be_method(3) == 3
+
+
+def test_add_method_click_options():
+    """Test if replaced args are added as hidden click options."""
+    class A(object):
+        def __init__(self, value):
+            self.internal_value = value
+
+    def function_to_be_method(b, instance, o_ther):
+        return b + instance.internal_value
+
+    instance = A(2)
+    add_function(instance, function_to_be_method, replace_args={"instance": instance, "o_ther": 2})
+    assert hasattr(instance, "function_to_be_method")
+    assert hasattr(instance.function_to_be_method, "__click_params__")
+    options = instance.function_to_be_method.__click_params__
+    assert len(options) == 2
+    assert options[0].name == "instance"
+    assert options[1].name == "o_ther"

@@ -7,6 +7,7 @@ from pyworkdir import WorkDir
 
 import textwrap
 
+import pytest
 from click.testing import CliRunner
 
 
@@ -60,6 +61,10 @@ def test_commandline_workdir_option(tmpdir):
             print(here/"here.tmp")
             print(workdir/"test.tmp")
             print(p)
+        
+        @click.option("-s")
+        def hello(s):
+            print("Hello", s)
         """
     )
     with open(tmpdir / "workdir.py", "w") as f:
@@ -71,3 +76,8 @@ def test_commandline_workdir_option(tmpdir):
     wd = WorkDir(tmpdir)
     assert result.exit_code == 0
     assert result.output == '\n'.join(["thing1", str(wd/"here.tmp"), str(wd/"test.tmp"), "thing2", ""])
+
+
+def test_entrypoint():
+    with pytest.raises(SystemExit) as e:
+        entrypoint()
