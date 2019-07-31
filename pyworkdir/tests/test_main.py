@@ -5,7 +5,6 @@ Tests for command line interface
 from pyworkdir.main import forge_command_line_interface, entrypoint
 from pyworkdir import WorkDir
 
-import os
 import textwrap
 
 from click.testing import CliRunner
@@ -26,7 +25,7 @@ def test_commandline_no_options(tmpdir):
     runner = CliRunner(env={"PWD":str(tmpdir)})
     result = runner.invoke(main, "hi")
     assert result.exit_code == 0
-    assert result.output == "hi" + os.linesep
+    assert result.output == "hi\n"
 
 
 def test_commandline_options(tmpdir):
@@ -46,7 +45,7 @@ def test_commandline_options(tmpdir):
     result = runner.invoke(main, ["hello", "-s", "friend"])
     print(result.output)
     assert result.exit_code == 0
-    assert result.output == "hello friend" + os.linesep
+    assert result.output == "hello friend\n"
 
 
 def test_commandline_workdir_option(tmpdir):
@@ -71,4 +70,4 @@ def test_commandline_workdir_option(tmpdir):
     print(result.output)
     wd = WorkDir(tmpdir)
     assert result.exit_code == 0
-    assert result.output == os.linesep.join(["thing1", str(wd/"here.tmp"), str(wd/"test.tmp"), "thing2", ""])
+    assert result.output == '\n'.join(["thing1", str(wd/"here.tmp"), str(wd/"test.tmp"), "thing2", ""])
