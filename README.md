@@ -64,6 +64,48 @@ By default, the `WorkDir` instance also recursively inherits attributes defined
 in its parent directory's `workdir.py` files.
 Therefore, subdirectories behave like subclasses.
 
+#### Directories have a Command Line Interface
+
+Custom functions of the `WorkDir` are directly accessible from a terminal via the command `workdir`.
+Before being called from the command line, all function parameters (except the reserved keywords `workdir` and `here`) 
+have to be declared as [Click options](https://click.palletsprojects.com/options/).
+
+```python
+# -- workdir.py --
+import click
+
+num_apples = 2
+
+@click.option("-c", type=int, default=12, help="A number (default:12)")
+@click.option("-s","--somebody", type=str, help="A name")
+def hello(count, somebody, workdir):
+    """This function says hello."""
+    workdir.num_apples += 1
+    print(
+        f"{count} times Hello! to {somebody}: "
+        f"we have {workdir.num_apples} apples."
+    )
+```
+Calling the function from the command line looks like this:
+```console
+foo@bar:~$  workdir hello --help
+Usage: workdir hello [OPTIONS]
+
+  This function says hello.
+
+Options:
+  -c, --count INTEGER  A number (default:12)
+  -s, --somebody TEXT  A name
+  --help               Show this message and exit.
+
+
+foo@bar:~$ workdir hello -s "you"
+12 times Hello! to you: we have 3 apples.
+```
+
+Writing `workdir.py` files like this makes it easy to define local functions that can be called both from inside python 
+and from a terminal. For the latter, the `workdir.py` behaves similar to a Makefile.
+
 #### Changing Environment Variables
 
 ```python
@@ -134,6 +176,11 @@ Copyright (c) 2019, Andreas Krämer
 
 
 #### Acknowledgements
+
+External Packages:
+ * [Click](https://click.palletsprojects.com/) - Command line interface
+ * [Jinja2](https://palletsprojects.com/p/jinja/) - Template engine
+ * [PyYaml](https://pyyaml.org) - Yaml parser
  
 Project based on the 
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.0.

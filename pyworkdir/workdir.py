@@ -10,7 +10,7 @@ import inspect
 import logging
 import traceback
 from copy import copy
-from pyworkdir.util import WorkDirException, add_method, recursively_get_filenames
+from pyworkdir.util import WorkDirException, add_function, recursively_get_filenames
 
 import yaml
 import jinja2
@@ -52,13 +52,32 @@ class WorkDir(object):
 
     Attributes
     ----------
-    path: pathlib.Path
+    path : pathlib.Path
         Absolute path of this working directory
-    scope_path: pathlib.Path
+    scope_path : pathlib.Path
         The path of the surrounding scope (when used as a context manager)
-    custom_attributes: dict
+    environment : dict
+        A dictionary of environment variables to be set in the context
+    scope_environment : dict
+        A dictionary to keep track of the environment of the scope
+    custom_attributes : dict
         A dictionary that lists custom attributes of this working directory. The values of the dictionary are
         the source files which contain the definition of each attribute.
+    python_files : list of str
+        A list of python filenames that the workdir instance may read its custom attributes from.
+        Files do not need to exist.
+    yml_files: list of str
+        A list of yml filenames that the workdir instance may read its custom attributes from.
+        Files do not need to exist.
+    logger : logging.Logger or None
+        A logger instance
+    logfile : str
+        Filename of the log file
+    loglevel_console : int
+        An integer between 0 (logging.NOT_SET) and 50 (logging.CRITICAL) for level of printing to the console
+    loglevel_file : int
+        An integer between 0 (logging.NOT_SET) and 50 (logging.CRITICAL) for level of printing to the file
+
 
     Notes
     -----
@@ -272,8 +291,11 @@ class WorkDir(object):
                 continue
             self.custom_attributes[name] = str(pyfile)
             if inspect.isfunction(object):
-                add_method(self, object, self_arg="workdir",
-                           replace_args={"here": pathlib.Path(os.path.dirname(pyfile))})
+                add_function(
+                    self,
+                    object,
+                    replace_args={"workdir": self, "here": pathlib.Path(os.path.dirname(pyfile))}
+                )
             else:
                 setattr(self, name, object)
 
