@@ -6,6 +6,7 @@ Python working directories.
 import os
 import pathlib
 import importlib.util
+import sys
 import inspect
 import logging
 import traceback
@@ -280,10 +281,19 @@ class WorkDir(object):
         self.logger.log(level, message)
 
     def _initialize_from_pyfile(self, pyfile):
-        """Initialize members of this WorkDir from a python file."""
-        spec = importlib.util.spec_from_file_location("workdir_module", self.path/pyfile)
+        """
+        Initialize members of this WorkDir from a python file.
+
+        Parameters
+        ----------
+        pyfile : path-like object
+            Absolute path of a python file.
+        """
+        sys.path.insert(0, os.path.dirname(pyfile))  # to resolve local import in pyfile
+        spec = importlib.util.spec_from_file_location("workdir_module", pyfile)
         pymod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(pymod)
+        sys.path.pop(0)
         for (name, object) in inspect.getmembers(pymod):
             if name.startswith("_") or inspect.ismodule(object):
                 continue

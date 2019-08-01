@@ -371,3 +371,46 @@ def test_yml_comment(tmpdir):
         assert os.environ["a"] == "1"
         assert hasattr(wd, "jambalayalaya")
         assert wd.jambalayalaya == tmpdir/"file.tmp"
+
+
+def test_import_local_modules_in_pyfile(tmpdir):
+    """Check if local imports are resolved in workdir.py"""
+    content = textwrap.dedent("""
+    import library
+    b = library.a
+    """)
+    library_content = textwrap.dedent("""
+    a = 1
+    """)
+    with open(tmpdir/"workdir.py", 'w') as f:
+        f.write(content)
+    with open(tmpdir/"library.py", 'w') as f:
+        f.write(library_content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "b")
+    assert wd.b == 1
+
+
+def test_competing_local_import_in_pyfile(tmpdir):
+    """Check that local imports work as expect (import from here, not subdir)."""
+    content = textwrap.dedent("""
+    import library
+    b = library.a
+    """)
+    library_content = textwrap.dedent("""
+    a = 1
+    """)
+    library_sub_content = textwrap.dedent("""
+    a = 2
+    """)
+    os.mkdir(tmpdir/"subdir")
+    with open(tmpdir/"workdir.py", 'w') as f:
+        f.write(content)
+    with open(tmpdir/"library.py", 'w') as f:
+        f.write(library_content)
+    with open(tmpdir/"subdir/library.py", 'w') as f:
+        f.write(library_sub_content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "b")
+    assert wd.b == 1
+
