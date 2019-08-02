@@ -371,3 +371,79 @@ def test_yml_comment(tmpdir):
         assert os.environ["a"] == "1"
         assert hasattr(wd, "jambalayalaya")
         assert wd.jambalayalaya == tmpdir/"file.tmp"
+
+
+def test_import_local_modules_in_pyfile(tmpdir):
+    """Check if local imports are resolved in workdir.py"""
+    content = textwrap.dedent("""
+    import library
+    b = library.a
+    """)
+    library_content = textwrap.dedent("""
+    a = 1
+    """)
+    with open(tmpdir/"workdir.py", 'w') as f:
+        f.write(content)
+    with open(tmpdir/"library.py", 'w') as f:
+        f.write(library_content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "b")
+    assert wd.b == 1
+
+
+def test_competing_local_import_in_pyfile(tmpdir):
+    """Check that local imports work as expect (import from here, not subdir)."""
+    content = textwrap.dedent("""
+    import library
+    b = library.a
+    """)
+    library_content = textwrap.dedent("""
+    a = 1
+    """)
+    library_sub_content = textwrap.dedent("""
+    a = 2
+    """)
+    os.mkdir(tmpdir/"subdir")
+    with open(tmpdir/"workdir.py", 'w') as f:
+        f.write(content)
+    with open(tmpdir/"library.py", 'w') as f:
+        f.write(library_content)
+    with open(tmpdir/"subdir/library.py", 'w') as f:
+        f.write(library_sub_content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "b")
+    assert wd.b == 1
+    assert list(wd.custom_attributes.keys()) == ["b"]
+
+
+def test_option(tmpdir):
+    """Test if functions with options are parsed"""
+    content = textwrap.dedent("""
+        import click
+        
+        @click.option("--path")
+        def parentdirr(path, workdir):
+            return (workdir/path).parent
+        """)
+    with open(tmpdir / "workdir.py", 'w') as f:
+        f.write(content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "parentdirr")
+    assert list(wd.custom_attributes.keys()) == ["parentdirr"]
+
+
+def test_redefine_function_arguments_locally(tmpdir):
+    """Test if non-local functions are parsed when defining them with function arguments."""
+    content = textwrap.dedent("""
+        from os.path import dirname
+        from click import option
+        
+        option("--path")(
+            dirname
+        )
+        """)
+    with open(tmpdir / "workdir.py", 'w') as f:
+        f.write(content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "dirname")
+    assert list(wd.custom_attributes.keys()) == ["dirname"]

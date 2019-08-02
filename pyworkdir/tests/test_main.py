@@ -71,11 +71,37 @@ def test_commandline_workdir_option(tmpdir):
         f.write(contents)
     main = forge_command_line_interface(directory=tmpdir)
     runner = CliRunner(env={"PWD": str(tmpdir)})
+    result = runner.invoke(main, "--help")
+    assert "things" in result.output
+    assert "hello" in result.output
     result = runner.invoke(main, ["things", "-p", "thing2", "-s", "thing1"])
     print(result.output)
     wd = WorkDir(tmpdir)
     assert result.exit_code == 0
     assert result.output == '\n'.join(["thing1", str(wd/"here.tmp"), str(wd/"test.tmp"), "thing2", ""])
+
+
+def test_imported_terminal_commands(tmpdir):
+    """Test that a click-decorated functions show up even when they are imported."""
+    content = textwrap.dedent(
+        """
+        from library import imported_function
+        """)
+    library = textwrap.dedent(
+        """
+        import click
+        @click.option("-s")
+        def imported_function(s):
+            print(s)
+        """)
+    with open(tmpdir/"workdir.py", 'w') as f:
+        f.write(content)
+    with open(tmpdir/"library.py", 'w') as f:
+        f.write(library)
+    runner = CliRunner(env={"PWD": str(tmpdir)})
+    main = forge_command_line_interface(directory=tmpdir)
+    result = runner.invoke(main, "--help")
+    assert "imported-function" in result.output
 
 
 def test_entrypoint():

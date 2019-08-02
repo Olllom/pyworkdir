@@ -2,6 +2,9 @@
 Utilities for workdir
 """
 
+import os
+import sys
+import importlib
 import functools
 import inspect
 import click
@@ -52,7 +55,7 @@ def recursively_get_filenames(path, filenames, recursion_depth, current_recursio
         return parentfiles + this_dir_files
 
 
-def add_function(instance, func, replace_args=dict()):
+def add_function(instance, func, replace_args=dict(), name=None):
     """
     Add a function to an object.
 
@@ -63,14 +66,18 @@ def add_function(instance, func, replace_args=dict()):
     func : function
         The function to be added to the instance
     replace_args : dict, Optional, default = dict()
-        Any arguments that are replaced by default values in the spirit of functools.partial.
+        Any arguments that are replaced by default values in the spirit of functools.partial
+    name : str, Optional, default=None
+        The function's name; if None, infer from function.__name__
 
-    Notes:
-    ------
-    This function takes care of click-decorated functions. They retain
+    Notes
+    -----
+    This function takes care of option-decorated functions. They retain
     their __click_params__ field; also all `replace_args`
     get added as hidden options so that they are not visible on the command line interface.
     """
+    if name is None:
+        name = func.__name__
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = (
         inspect.getfullargspec(func)
     )
@@ -98,4 +105,35 @@ def add_function(instance, func, replace_args=dict()):
                 hidden=True
             )(method)
 
-    setattr(instance, func.__name__, method)
+    setattr(instance, name, method)
+
+
+def import_from_file(filename):
+    """
+    Import a python module from a file by path.
+
+    Parameters
+    ----------
+    filename : str or path-like
+        The file to be imported
+
+    Returns
+    -------
+    pymod : python module
+        The imported module
+    """
+    # include the path in the pythonpath to resolve local imports
+    old_modules = copy(sys.modules)
+    sys.path.insert(0, os.path.realpath(os.path.dirname(filename)))  # to resolve local import in pyfile
+
+    # load module
+    loader = importlib.machinery.SourceFileLoader("pyfile_module", str(filename))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    pymod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pymod)
+
+    # reset sys.path and sys.modules to allow importing other modules with the same name
+    sys.path.pop(0)
+    sys.modules = old_modules
+
+    return pymod

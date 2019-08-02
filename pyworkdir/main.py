@@ -5,6 +5,7 @@ Command line interface
 from pyworkdir import WorkDir
 
 import textwrap
+import inspect
 
 import click
 
@@ -31,7 +32,7 @@ def forge_command_line_interface(*args, **kwargs):
     # collect commands
     for attribute in wd.custom_attributes:
         object = getattr(wd, attribute)
-        if callable(object):
+        if inspect.isfunction(object):
             main.command()(object)
     return main
 
