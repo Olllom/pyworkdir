@@ -1,17 +1,15 @@
 """
-workdir.py
 Python working directories.
 """
 
 import os
 import pathlib
-import importlib.util
-import sys
 import inspect
 import logging
 import traceback
 from copy import copy
-from pyworkdir.util import WorkDirException, add_function, recursively_get_filenames
+from pyworkdir.util import (
+    WorkDirException, add_function, recursively_get_filenames, import_from_file)
 
 import yaml
 import jinja2
@@ -139,16 +137,16 @@ class WorkDir(object):
     instance and the directory that contains the yml file, respectively.
 
     >>> # -- workdir.yml --
-    >>> environment:
-    >>>     VAR_ONE: "a"
-    >>> attributes:
-    >>>     my_number: 1
-    >>>     my_list:
-    >>>         - 1
-    >>>         - 2
-    >>>         - 3
-    >>>     my_tmpdir: {{ here/"tmpdir" }}
-    >>>     my_local_tmpfile: {{ workdir/"file.tmp" }}
+        environment:
+            VAR_ONE: "a"
+        attributes:
+            my_number: 1
+            my_list:
+                - 1
+                - 2
+                - 3
+            my_tmpdir: {{ here/"tmpdir" }}
+            my_local_tmpfile: {{ workdir/"file.tmp" }}
 
     >>> with WorkDir() as wd:
     >>>     print(wd.my_number + 5, wd.my_tmpdir , wd.my_local_tmpfile)
@@ -182,7 +180,6 @@ class WorkDir(object):
             loglevel_file=logging.DEBUG
     ):
         """
-        Constructor
         """
         self.path = pathlib.Path(os.path.realpath(directory))
         self.scope_path = copy(self.path)
@@ -196,7 +193,7 @@ class WorkDir(object):
         self.python_files = recursively_get_filenames(self.path, python_files, python_files_recursion)
         for pyfile in self.python_files:
             if (self.path/pyfile).is_file():
-                self._initialize_from_pyfile(pyfile)
+                self.add_members_from_pyfile(pyfile)
         # logging
         self.logger = logger
         self.logfile = logfile
@@ -208,7 +205,7 @@ class WorkDir(object):
         self.yml_files = recursively_get_filenames(self.path, yml_files, yml_files_recursion)
         for yml_file in self.yml_files:
             if (self.path/yml_file).is_file():
-                self._initialize_from_yml_file(self.path/yml_file)
+                self.add_members_from_yml_file(self.path / yml_file)
         self.environment.update(environment)
         self.scope_environment = copy(self.environment)
 
@@ -280,35 +277,62 @@ class WorkDir(object):
             self._create_logger()
         self.logger.log(level, message)
 
-    def _initialize_from_pyfile(self, pyfile):
+    def add_members_from_pyfile(self, pyfile):
         """
         Initialize members of this WorkDir from a python file.
+
+        The following attributes are not added as members of the WorkDir:
+
+        1) imported modules
+        2) built-ins and private objects, i.e. if the name starts with an underscore
+        3) objects that are imported from other modules using `from ... import ...`
+
+        The only exception to 3. is if the imported function has a command-line interface,
+        i.e. `@click.option`-decorated functions added to the workdir so that they can be
+        called from the command line.
 
         Parameters
         ----------
         pyfile : path-like object
             Absolute path of a python file.
+
+        Notes
+        -----
+        The function arguments `workdir` and `here` of imported functions
+        are replaced by the WorkDir instance and the directory containing the
+        pyfile, respectively.
         """
-        sys.path.insert(0, os.path.dirname(pyfile))  # to resolve local import in pyfile
-        spec = importlib.util.spec_from_file_location("workdir_module", pyfile)
-        pymod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(pymod)
-        sys.path.pop(0)
+        pymod = import_from_file(pyfile)
+
         for (name, object) in inspect.getmembers(pymod):
-            if name.startswith("_") or inspect.ismodule(object):
+            # skip all imports
+            if inspect.ismodule(object):
+                continue
+            # skip all built-ins and private objects
+            if name.startswith("_"):
+                continue
+            # skip all objects that are not defined in this module (if they are not command-line callables)
+            if (
+                    hasattr(object, "__module__")
+                    and object.__module__ != "pyfile_module"
+                    and not hasattr(object, "__click_params__")
+            ):
                 continue
             self.custom_attributes[name] = str(pyfile)
             if inspect.isfunction(object):
                 add_function(
                     self,
                     object,
-                    replace_args={"workdir": self, "here": pathlib.Path(os.path.dirname(pyfile))}
+                    replace_args={"workdir": self, "here": pathlib.Path(os.path.dirname(pyfile))},
+                    name=name
                 )
             else:
                 setattr(self, name, object)
 
-    def _initialize_from_yml_file(self, yml_file):
-        """Initialize members and environment variables from a yml file."""
+    def add_members_from_yml_file(self, yml_file):
+        """
+        Initialize members and environment variables from a yml file.
+        """
         with open(yml_file, "r") as f:
             dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yml_file.parent), Loader=yaml.SafeLoader)
             if "attributes" in dictionary:

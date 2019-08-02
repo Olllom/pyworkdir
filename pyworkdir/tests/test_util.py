@@ -2,7 +2,9 @@
 Tests for utilities.
 """
 
-from pyworkdir.util import add_function
+import sys
+import textwrap
+from pyworkdir.util import add_function, import_from_file
 
 
 def test_add_method_replace_args():
@@ -21,6 +23,19 @@ def test_add_method_replace_args():
 
     instance2 = A(3)
     assert not hasattr(instance2, "function_to_be_method")
+
+
+def test_specify_name():
+    class A:
+        pass
+
+    def f():
+        return 1
+
+    instance = A()
+    add_function(instance, f, name="jambalaya")
+    assert hasattr(instance, "jambalaya")
+    assert instance.jambalaya() == 1
 
 
 def test_add_staticmethod():
@@ -53,3 +68,41 @@ def test_add_method_click_options():
     assert len(options) == 2
     assert options[0].name == "instance"
     assert options[1].name == "o_ther"
+
+
+def test_local_import(tmpdir):
+    """Test, if all imported functions are still working after resetting sys.module."""
+    content = textwrap.dedent(
+        """
+        import library
+        def do():
+            return library.do()
+        """
+    )
+    library = textwrap.dedent(
+        """
+        import library2
+        def do():
+            return library2.do()
+        """
+    )
+    library2 = textwrap.dedent(
+        """
+        def do():
+            return 1    
+        """
+    )
+    with open(tmpdir/"mymodule.py", 'w') as f:
+        f.write(content)
+    with open(tmpdir/"library.py", 'w') as f:
+        f.write(library)
+    with open(tmpdir/"library2.py", 'w') as f:
+        f.write(library2)
+    mymodule = import_from_file(tmpdir/"mymodule.py")
+    a = mymodule.do
+    del mymodule
+    assert "mymodule" not in sys.modules
+    assert "library" not in sys.modules
+    assert "library2" not in sys.modules
+    assert str(tmpdir) not in sys.path
+    assert a() == 1

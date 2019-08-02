@@ -413,4 +413,37 @@ def test_competing_local_import_in_pyfile(tmpdir):
     wd = WorkDir(tmpdir)
     assert hasattr(wd, "b")
     assert wd.b == 1
+    assert list(wd.custom_attributes.keys()) == ["b"]
 
+
+def test_option(tmpdir):
+    """Test if functions with options are parsed"""
+    content = textwrap.dedent("""
+        import click
+        
+        @click.option("--path")
+        def parentdirr(path, workdir):
+            return (workdir/path).parent
+        """)
+    with open(tmpdir / "workdir.py", 'w') as f:
+        f.write(content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "parentdirr")
+    assert list(wd.custom_attributes.keys()) == ["parentdirr"]
+
+
+def test_redefine_function_arguments_locally(tmpdir):
+    """Test if non-local functions are parsed when defining them with function arguments."""
+    content = textwrap.dedent("""
+        from os.path import dirname
+        from click import option
+        
+        option("--path")(
+            dirname
+        )
+        """)
+    with open(tmpdir / "workdir.py", 'w') as f:
+        f.write(content)
+    wd = WorkDir(tmpdir)
+    assert hasattr(wd, "dirname")
+    assert list(wd.custom_attributes.keys()) == ["dirname"]
