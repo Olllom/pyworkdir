@@ -2,6 +2,7 @@
 Command line interface
 """
 
+import pyworkdir
 from pyworkdir import WorkDir, forge_method
 
 import textwrap
@@ -31,6 +32,8 @@ def forge_command_line_interface(*args, **kwargs):
             decorate them with "@click.option(...)" to define function parameters as command line options.
             """)
     )
+    # add version option
+    main = click.version_option(version=pyworkdir.__version__, prog_name="pyworkdir")(main)
     # collect commands
     for attribute in wd.custom_attributes:
         object = getattr(wd, attribute)
