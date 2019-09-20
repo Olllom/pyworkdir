@@ -9,7 +9,8 @@ import logging
 import traceback
 from copy import copy
 from pyworkdir.util import (
-    WorkDirException, forge_method, recursively_get_filenames, import_from_file)
+    WorkDirException, forge_method, recursively_get_filenames, import_from_file
+)
 
 import yaml
 import jinja2
@@ -76,6 +77,8 @@ class WorkDir(object):
         An integer between 0 (logging.NOT_SET) and 50 (logging.CRITICAL) for level of printing to the console
     loglevel_file : int
         An integer between 0 (logging.NOT_SET) and 50 (logging.CRITICAL) for level of printing to the file
+    commands : dict
+        A dictionary of terminal commands.
 
 
     Notes
@@ -199,6 +202,7 @@ class WorkDir(object):
         self.loglevel_file = loglevel_file
         # environment variables
         self.environment = dict()
+        self.commands = dict()
         # read yml files
         self.yml_files = recursively_get_filenames(self.path, yml_files, yml_files_recursion)
         for yml_file in self.yml_files:
@@ -237,17 +241,6 @@ class WorkDir(object):
 
     def __len__(self):
         return len(os.listdir(str(self.path)))
-
-    #def __call__(self, *command, **kwargs):
-    #    self.terminal_command(command, **kwargs)
-
-    #def terminal_command(self, command, decoding="latin-1"):
-    #    if len(command) == 1 and isinstance(command[0], str):
-    #        command = [shlex.split(command)]
-    #    assert len(command) > 0
-    #    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    #    out, err = p.communicate()
-    #    return out.decode(decoding)[:-1]
 
     def files(self, abs=False):
         """
@@ -350,6 +343,17 @@ class WorkDir(object):
                     setattr(self, attribute, dictionary["attributes"][attribute])
             if "environment" in dictionary:
                 self.environment.update(dictionary["environment"])
+            if "commands" in dictionary:
+                self.commands.update(dictionary["commands"])
+
+    def __getattr__(self, item):
+        if item in self.commands:
+            def f():
+                # add some point we want to use subprocess and return out and err
+                os.system(self.commands[item].split("//")[0])
+            return f
+        else:
+            raise AttributeError(f"'WorkDir' object has not attribute {item}")
 
     def _create_logger(self):
         """Create a default logger."""

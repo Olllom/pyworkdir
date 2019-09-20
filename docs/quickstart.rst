@@ -126,7 +126,11 @@ instance and the directory that contains the yml file, respectively::
             - 3
         my_tmpdir: {{ here/"tmpdir" }}
         my_local_tmpfile: {{ workdir/"file.tmp" }}
+    commands:
+        echo: echo Hello // print Hello to the command line
 
+The commands are shortcuts for terminal commands that can be called from python and from the command line.
+Everything after `//` is used as a documentation string for the command line interface.
 The attributes and environment variables get added to the WorkDir::
 
     import os
@@ -136,6 +140,7 @@ The attributes and environment variables get added to the WorkDir::
         for el in wd.my_list:
              print(el)
         print(os.environ["VAR_ONE"])
+
 
 Note that environment variables passed to the constructor have preference over those in a yml file.
 

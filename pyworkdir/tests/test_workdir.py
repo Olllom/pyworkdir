@@ -447,3 +447,23 @@ def test_redefine_function_arguments_locally(tmpdir):
     wd = WorkDir(tmpdir)
     assert hasattr(wd, "dirname")
     assert list(wd.custom_attributes.keys()) == ["dirname"]
+
+
+def test_terminal_command(tmpdir):
+    with WorkDir(tmpdir) as wd:
+        assert len(wd.commands) == 0
+    content = textwrap.dedent("""
+        commands:
+             echo: echo Hello > {{ here/"out.txt" }} // print something
+        """)
+    with open(tmpdir / "workdir.yml", 'w') as f:
+        f.write(content)
+    with WorkDir(tmpdir) as wd:
+        assert len(wd.commands) == 1
+        assert wd.commands["echo"] == f"echo Hello > {str(tmpdir/'out.txt')} // print something"
+
+    with WorkDir(tmpdir):
+        wd.echo()
+        assert os.path.isfile(tmpdir/"out.txt")
+        with open(tmpdir/"out.txt", "r") as f:
+            assert f.read() == "Hello\n"

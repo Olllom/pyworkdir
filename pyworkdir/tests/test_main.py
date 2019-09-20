@@ -7,6 +7,7 @@ from pyworkdir import WorkDir
 
 import textwrap
 from io import StringIO
+import os
 
 import pytest
 from click.testing import CliRunner
@@ -145,3 +146,22 @@ def test_no_cli(tmpdir):
     main = forge_command_line_interface(directory=tmpdir)
     result = runner.invoke(main, "--help")
     assert not "imported-function" in result.output
+
+
+def test_terminal_command(tmpdir):
+    content = textwrap.dedent("""
+        commands:
+            echo: echo Hello  > {{ here/"out.txt" }}  // print something
+        """)
+    with open(tmpdir / "workdir.yml", 'w') as f:
+        f.write(content)
+    runner = CliRunner(env={"PWD": str(tmpdir)})
+    main = forge_command_line_interface(directory=tmpdir)
+    result = runner.invoke(main, "--help")
+    assert "echo" in result.output and "print something" in result.output
+
+    with WorkDir(tmpdir):
+        os.system("workdir echo")
+        assert os.path.isfile(tmpdir/"out.txt")
+        with open(tmpdir/"out.txt", "r") as f:
+            assert f.read() == "Hello\n"

@@ -8,6 +8,7 @@ from pyworkdir import WorkDir, forge_method
 import textwrap
 import inspect
 import sys
+import os
 
 import yaml
 import click
@@ -39,6 +40,10 @@ def forge_command_line_interface(*args, **kwargs):
         object = getattr(wd, attribute)
         if inspect.isfunction(object) and not hasattr(object, "__nocli__"):
             main.command()(object)
+    for command in wd.commands:
+        bash, doc = wd.commands[command].split("//")
+        cmd = click.Command(command, callback=bash_function(bash), help=doc)
+        main.add_command(cmd)
     # default commands
     main.command()(forge_method(wd, show, replace_args={"workdir": wd}, add=False))
     return main
@@ -66,6 +71,22 @@ def no_cli(function):
     """
     setattr(function, "__nocli__", True)
     return function
+
+
+def bash_function(bash_command):
+    """Bash command as a python function
+
+    Parameters
+    ----------
+    bash_command : str
+
+    Returns
+    -------
+    function : callable
+        A python function that runs the bash command.
+    """
+
+    return lambda: os.system(bash_command)
 
 
 # default command line interface functions
@@ -96,3 +117,5 @@ def show(workdir, variables=False, functions=False, sources=False, environment=F
     if environment:
         dictionary["environment"] = workdir.environment
     yaml.dump(dictionary, stream=out)
+
+
