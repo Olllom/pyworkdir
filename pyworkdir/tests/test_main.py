@@ -113,6 +113,27 @@ def test_entrypoint():
 
 
 def test_show(tmpdir):
+    content = textwrap.dedent(
+        """
+        a = 1
+        def b(s):
+            print(s)
+        """
+    )
+    with open(tmpdir / "workdir.py", 'w') as f:
+        f.write(content)
+    content = textwrap.dedent(
+        """
+        environment:
+            A: 1
+        commands:
+            echo: echo // echo
+        attributes: 
+            c: a
+        """
+    )
+    with open(tmpdir / "workdir.yml", 'w') as f:
+        f.write(content)
     with WorkDir(tmpdir) as wd:
         out = StringIO()
         show(wd, variables=True, environment=True, commands=True, sources=True, functions=True, out=out)
