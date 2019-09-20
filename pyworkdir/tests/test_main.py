@@ -166,4 +166,4 @@ def test_terminal_command(tmpdir):
         os.system("workdir echo")
         assert os.path.isfile(tmpdir/"out.txt")
         with open(tmpdir/"out.txt", "r") as f:
-            assert f.read() == "Hello\n"
+            assert f.read().strip() == "Hello"

@@ -466,4 +466,4 @@ def test_terminal_command(tmpdir):
         wd.echo()
         assert os.path.isfile(tmpdir/"out.txt")
         with open(tmpdir/"out.txt", "r") as f:
-            assert f.read() == "Hello\n"
+            assert f.read().strip() == "Hello"
