@@ -13,4 +13,4 @@ del get_versions, versions
 # Add imports here
 from pyworkdir.util import WorkDirException, recursively_get_filenames, forge_method
 from pyworkdir.workdir import WorkDir
-from pyworkdir.main import show
+from pyworkdir.main import show, no_cli

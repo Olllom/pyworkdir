@@ -37,7 +37,7 @@ def forge_command_line_interface(*args, **kwargs):
     # collect commands
     for attribute in wd.custom_attributes:
         object = getattr(wd, attribute)
-        if inspect.isfunction(object):
+        if inspect.isfunction(object) and not hasattr(object, "__nocli__"):
             main.command()(object)
     # default commands
     main.command()(forge_method(wd, show, replace_args={"workdir": wd}, add=False))
@@ -50,6 +50,22 @@ def entrypoint():
     """
     command_group = forge_command_line_interface()
     command_group()
+
+
+def no_cli(function):
+    """Function decorator to suppress generation of a command-line interface for this function.
+
+    Examples
+    --------
+    >>> # in workdir.py
+    >>> from pyworkdir import no_cli
+    >>>
+    >>> @no_cli
+    >>> def function_without_command_line_interace()
+    >>>     pass
+    """
+    setattr(function, "__nocli__", True)
+    return function
 
 
 # default command line interface functions

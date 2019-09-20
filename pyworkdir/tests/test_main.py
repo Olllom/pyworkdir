@@ -126,3 +126,22 @@ def test_show(tmpdir):
         assert environment == set(wd.environment)
         assert name == str(tmpdir)
         assert sources == wd.custom_attributes
+
+
+def test_no_cli(tmpdir):
+    content = textwrap.dedent(
+        """
+        from click import option
+        from pyworkdir import no_cli
+        
+        @no_cli
+        @option("-s")
+        def imported_function(s):
+            print(s)
+        """)
+    with open(tmpdir / "workdir.py", 'w') as f:
+        f.write(content)
+    runner = CliRunner(env={"PWD": str(tmpdir)})
+    main = forge_command_line_interface(directory=tmpdir)
+    result = runner.invoke(main, "--help")
+    assert not "imported-function" in result.output

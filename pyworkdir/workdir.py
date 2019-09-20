@@ -179,8 +179,6 @@ class WorkDir(object):
             loglevel_console=logging.INFO,
             loglevel_file=logging.DEBUG
     ):
-        """
-        """
         self.path = pathlib.Path(os.path.realpath(directory))
         self.scope_path = copy(self.path)
         self.custom_attributes = {}
