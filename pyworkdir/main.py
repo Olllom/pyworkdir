@@ -97,7 +97,8 @@ def bash_function(bash_command):
 @click.option("-f", "--functions", count=True, help="Print custom functions.")
 @click.option("-s", "--sources", count=True, help="Print source of custom attributes.")
 @click.option("-e", "--environment", count=True, help="Print source of custom attributes.")
-def show(workdir, variables=False, functions=False, sources=False, environment=False, out=sys.stdout):
+@click.option("-c", "--commands", count=True, help="Print source of terminal commands.")
+def show(workdir, variables=False, functions=False, sources=False, environment=False, commands=False, out=sys.stdout):
     """Print the working directory in yaml format."""
     dictionary = {"name": str(workdir)}
     if variables:
@@ -116,6 +117,8 @@ def show(workdir, variables=False, functions=False, sources=False, environment=F
         dictionary["sources"] = workdir.custom_attributes
     if environment:
         dictionary["environment"] = workdir.environment
+    if commands:
+        dictionary["commands"] = workdir.commands
     yaml.dump(dictionary, stream=out)
 
 

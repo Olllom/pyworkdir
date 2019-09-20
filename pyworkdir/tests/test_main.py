@@ -115,7 +115,7 @@ def test_entrypoint():
 def test_show(tmpdir):
     with WorkDir(tmpdir) as wd:
         out = StringIO()
-        show(wd, True, True, True, True, out)
+        show(wd, variables=True, environment=True, commands=True, sources=True, functions=True, out=out)
         dictionary = yaml.load(out.getvalue(), yaml.SafeLoader)
         attributes = set(dictionary["attributes"].keys())
         functions = set(dictionary["functions"])
@@ -123,10 +123,12 @@ def test_show(tmpdir):
         environment = set(dictionary["environment"])
         name = dictionary["name"]
         sources = dictionary["sources"]
+        commands = dictionary["commands"]
         assert customs == set(wd.custom_attributes.keys())
         assert environment == set(wd.environment)
         assert name == str(tmpdir)
         assert sources == wd.custom_attributes
+        assert commands == wd.commands
 
 
 def test_no_cli(tmpdir):
