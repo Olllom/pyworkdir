@@ -9,7 +9,7 @@ import logging
 import traceback
 from copy import copy
 from pyworkdir.util import (
-    WorkDirException, add_function, recursively_get_filenames, import_from_file)
+    WorkDirException, forge_method, recursively_get_filenames, import_from_file)
 
 import yaml
 import jinja2
@@ -240,6 +240,17 @@ class WorkDir(object):
     def __len__(self):
         return len(os.listdir(str(self.path)))
 
+    #def __call__(self, *command, **kwargs):
+    #    self.terminal_command(command, **kwargs)
+
+    #def terminal_command(self, command, decoding="latin-1"):
+    #    if len(command) == 1 and isinstance(command[0], str):
+    #        command = [shlex.split(command)]
+    #    assert len(command) > 0
+    #    p = subprocess.Popen(command, stdout=subprocess.PIPE)
+    #    out, err = p.communicate()
+    #    return out.decode(decoding)[:-1]
+
     def files(self, abs=False):
         """
         Iterator over files in this work dir.
@@ -320,7 +331,7 @@ class WorkDir(object):
                 continue
             self.custom_attributes[name] = str(pyfile)
             if inspect.isfunction(object):
-                add_function(
+                forge_method(
                     self,
                     object,
                     replace_args={"workdir": self, "here": pathlib.Path(os.path.dirname(pyfile))},
@@ -337,6 +348,7 @@ class WorkDir(object):
             dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yml_file.parent), Loader=yaml.SafeLoader)
             if "attributes" in dictionary:
                 for attribute in dictionary["attributes"]:
+                    self.custom_attributes[attribute] = str(yml_file)
                     setattr(self, attribute, dictionary["attributes"][attribute])
             if "environment" in dictionary:
                 self.environment.update(dictionary["environment"])
@@ -360,3 +372,4 @@ class WorkDir(object):
         console_formatter = logging.Formatter('%(message)s')
         console_handler.setFormatter(console_formatter)
         self.logger.addHandler(console_handler)
+

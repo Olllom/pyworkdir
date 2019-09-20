@@ -2,13 +2,15 @@
 Tests for command line interface
 """
 
-from pyworkdir.main import forge_command_line_interface, entrypoint
+from pyworkdir.main import forge_command_line_interface, entrypoint, show
 from pyworkdir import WorkDir
 
 import textwrap
+from io import StringIO
 
 import pytest
 from click.testing import CliRunner
+import yaml
 
 
 def test_commandline_no_options(tmpdir):
@@ -107,3 +109,20 @@ def test_imported_terminal_commands(tmpdir):
 def test_entrypoint():
     with pytest.raises(SystemExit) as e:
         entrypoint()
+
+
+def test_show(tmpdir):
+    with WorkDir(tmpdir) as wd:
+        out = StringIO()
+        show(wd, True, True, True, True, out)
+        dictionary = yaml.load(out.getvalue(), yaml.SafeLoader)
+        attributes = set(dictionary["attributes"].keys())
+        functions = set(dictionary["functions"])
+        customs = attributes.union(functions)
+        environment = set(dictionary["environment"])
+        name = dictionary["name"]
+        sources = dictionary["sources"]
+        assert customs == set(wd.custom_attributes.keys())
+        assert environment == set(wd.environment)
+        assert name == str(tmpdir)
+        assert sources == wd.custom_attributes

@@ -4,7 +4,7 @@ Tests for utilities.
 
 import sys
 import textwrap
-from pyworkdir.util import add_function, import_from_file
+from pyworkdir.util import forge_method, import_from_file
 
 
 def test_add_method_replace_args():
@@ -17,7 +17,7 @@ def test_add_method_replace_args():
         return b + instance.internal_value
 
     instance = A(2)
-    add_function(instance, function_to_be_method, replace_args={"instance": instance})
+    forge_method(instance, function_to_be_method, replace_args={"instance": instance})
     assert hasattr(instance, "function_to_be_method")
     assert instance.function_to_be_method(3) == 5
 
@@ -33,7 +33,7 @@ def test_specify_name():
         return 1
 
     instance = A()
-    add_function(instance, f, name="jambalaya")
+    forge_method(instance, f, name="jambalaya")
     assert hasattr(instance, "jambalaya")
     assert instance.jambalaya() == 1
 
@@ -47,7 +47,7 @@ def test_add_staticmethod():
         return b
     instance = A()
 
-    add_function(instance, function_to_be_method)
+    forge_method(instance, function_to_be_method)
     assert function_to_be_method(3) == 3
 
 
@@ -61,7 +61,7 @@ def test_add_method_click_options():
         return b + instance.internal_value
 
     instance = A(2)
-    add_function(instance, function_to_be_method, replace_args={"instance": instance, "o_ther": 2})
+    forge_method(instance, function_to_be_method, replace_args={"instance": instance, "o_ther": 2})
     assert hasattr(instance, "function_to_be_method")
     assert hasattr(instance.function_to_be_method, "__click_params__")
     options = instance.function_to_be_method.__click_params__
