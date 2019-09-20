@@ -12,3 +12,6 @@ comment:
   behavior: default
   flags: null
   paths: null
+ignore:
+  - "pyworkdir/tests"
+  - "pyworkdir/_version.py"

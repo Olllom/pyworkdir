@@ -81,6 +81,17 @@ Calling the function from the command line looks like this::
 Writing `workdir.py` files like this makes it easy to define local functions that can be called both from inside python
 and from a terminal. For the latter, the `workdir.py` behaves similar to a Makefile.
 
+To suppress generation of the command line interface for a function, pyworkdir provides a `no_cli` decorator::
+
+    # -- workdir.py --
+
+    from pyworkdir import no_cli
+
+    @no_cli
+    def a_function_without_command_line_interface():
+        pass
+
+
 .. _Click options: https://click.palletsprojects.com/options/
 
 Changing Environment Variables
@@ -115,7 +126,11 @@ instance and the directory that contains the yml file, respectively::
             - 3
         my_tmpdir: {{ here/"tmpdir" }}
         my_local_tmpfile: {{ workdir/"file.tmp" }}
+    commands:
+        echo: echo Hello // print Hello to the command line
 
+The commands are shortcuts for terminal commands that can be called from python and from the command line.
+Everything after `//` is used as a documentation string for the command line interface.
 The attributes and environment variables get added to the WorkDir::
 
     import os
@@ -125,6 +140,7 @@ The attributes and environment variables get added to the WorkDir::
         for el in wd.my_list:
              print(el)
         print(os.environ["VAR_ONE"])
+
 
 Note that environment variables passed to the constructor have preference over those in a yml file.
 

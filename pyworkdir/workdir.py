@@ -9,7 +9,8 @@ import logging
 import traceback
 from copy import copy
 from pyworkdir.util import (
-    WorkDirException, add_function, recursively_get_filenames, import_from_file)
+    WorkDirException, forge_method, recursively_get_filenames, import_from_file
+)
 
 import yaml
 import jinja2
@@ -76,6 +77,8 @@ class WorkDir(object):
         An integer between 0 (logging.NOT_SET) and 50 (logging.CRITICAL) for level of printing to the console
     loglevel_file : int
         An integer between 0 (logging.NOT_SET) and 50 (logging.CRITICAL) for level of printing to the file
+    commands : dict
+        A dictionary of terminal commands.
 
 
     Notes
@@ -179,8 +182,6 @@ class WorkDir(object):
             loglevel_console=logging.INFO,
             loglevel_file=logging.DEBUG
     ):
-        """
-        """
         self.path = pathlib.Path(os.path.realpath(directory))
         self.scope_path = copy(self.path)
         self.custom_attributes = {}
@@ -201,6 +202,7 @@ class WorkDir(object):
         self.loglevel_file = loglevel_file
         # environment variables
         self.environment = dict()
+        self.commands = dict()
         # read yml files
         self.yml_files = recursively_get_filenames(self.path, yml_files, yml_files_recursion)
         for yml_file in self.yml_files:
@@ -320,7 +322,7 @@ class WorkDir(object):
                 continue
             self.custom_attributes[name] = str(pyfile)
             if inspect.isfunction(object):
-                add_function(
+                forge_method(
                     self,
                     object,
                     replace_args={"workdir": self, "here": pathlib.Path(os.path.dirname(pyfile))},
@@ -337,9 +339,21 @@ class WorkDir(object):
             dictionary = yaml.load(jinja2.Template(f.read()).render(workdir=self, here=yml_file.parent), Loader=yaml.SafeLoader)
             if "attributes" in dictionary:
                 for attribute in dictionary["attributes"]:
+                    self.custom_attributes[attribute] = str(yml_file)
                     setattr(self, attribute, dictionary["attributes"][attribute])
             if "environment" in dictionary:
                 self.environment.update(dictionary["environment"])
+            if "commands" in dictionary:
+                self.commands.update(dictionary["commands"])
+
+    def __getattr__(self, item):
+        if item in self.commands:
+            def f():
+                # add some point we want to use subprocess and return out and err
+                os.system(self.commands[item].split("//")[0])
+            return f
+        else:
+            raise AttributeError(f"'WorkDir' object has not attribute {item}")
 
     def _create_logger(self):
         """Create a default logger."""
@@ -360,3 +374,4 @@ class WorkDir(object):
         console_formatter = logging.Formatter('%(message)s')
         console_handler.setFormatter(console_formatter)
         self.logger.addHandler(console_handler)
+

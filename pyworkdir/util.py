@@ -55,9 +55,9 @@ def recursively_get_filenames(path, filenames, recursion_depth, current_recursio
         return parentfiles + this_dir_files
 
 
-def add_function(instance, func, replace_args=dict(), name=None):
+def forge_method(instance, func, replace_args=dict(), name=None, add=True):
     """
-    Add a function to an object.
+    Forge a method and add it to an instance.
 
     Parameters
     ----------
@@ -69,6 +69,8 @@ def add_function(instance, func, replace_args=dict(), name=None):
         Any arguments that are replaced by default values in the spirit of functools.partial
     name : str, Optional, default=None
         The function's name; if None, infer from function.__name__
+    add : bool, Optional, default=True
+        If False, do not add the function but return it instead.
 
     Notes
     -----
@@ -105,7 +107,10 @@ def add_function(instance, func, replace_args=dict(), name=None):
                 hidden=True
             )(method)
 
-    setattr(instance, name, method)
+    if add:
+        setattr(instance, name, method)
+    else:
+        return method
 
 
 def import_from_file(filename):
